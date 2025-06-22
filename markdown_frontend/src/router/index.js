@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import lecturerRoutes from "./lecturerRoutes";
-// import studentRoutes from "./studentRoutes";
+import studentRoutes from "./studentRoutes";
 // import advisorRoutes from "./advisorRoutes";
 // import adminRoutes from "./adminRoutes";
 
@@ -12,7 +12,7 @@ const routes = [
     component: () => import("../views/Login.vue"),
   },
   ...lecturerRoutes,
-  // ...studentRoutes,
+  ...studentRoutes,
   // ...advisorRoutes,
   // ...adminRoutes,
   {
