@@ -58,15 +58,23 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="component in sortedComponents" :key="component.id"
-            class="hover:bg-gray-50/50 transition-colors duration-200 group">
+            class="hover:bg-gray-50/50 transition-colors duration-200 group"
+            :class="{ 'bg-yellow-50': component.type === 'final_exam' }">
             <td class="px-6 py-5">
               <div class="flex items-center">
                 <div
-                  class="w-10 h-10 rounded-lg border-[0.5px] bg-sky-100 flex items-center justify-center text-white font-bold text-sm mr-4">
+                  class="w-10 h-10 rounded-lg border-[0.5px] flex items-center justify-center text-white font-bold text-sm mr-4"
+                  :class="component.type === 'final_exam' ? 'bg-red-100' : 'bg-sky-100'">
                   {{ getComponentIcon(component.type) }}
                 </div>
                 <div>
-                  <div class="text-sm font-bold text-gray-900">{{ component.name }}</div>
+                  <div class="text-sm font-bold text-gray-900">
+                    {{ component.name }}
+                    <span v-if="component.type === 'final_exam'"
+                      class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                      Required
+                    </span>
+                  </div>
                   <div class="text-xs text-gray-500">{{ getComponentDescription(component.type) }}</div>
                 </div>
               </div>
@@ -74,7 +82,8 @@
             <td class="px-6 py-5">
               <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                 :class="getTypeClass(component.type)">
-                {{ component.type.charAt(0).toUpperCase() + component.type.slice(1) }}
+                {{ component.type === 'final_exam' ? 'Final Exam' : component.type.charAt(0).toUpperCase() +
+                  component.type.slice(1) }}
               </span>
             </td>
             <td class="px-6 py-5">
@@ -86,7 +95,8 @@
             <td class="px-6 py-5">
               <div class="flex items-center">
                 <div class="flex-1 bg-gray-200 rounded-full h-2 mr-3 max-w-[60px]">
-                  <div class="bg-gradient-to-r from-sky-400 to-sky-600 h-2 rounded-full transition-all duration-300"
+                  <div class="h-2 rounded-full transition-all duration-300"
+                    :class="component.type === 'final_exam' ? 'bg-gradient-to-r from-red-400 to-red-600' : 'bg-gradient-to-r from-sky-400 to-sky-600'"
                     :style="{ width: `${Math.min(component.weight, 100)}%` }"></div>
                 </div>
                 <span class="text-sm font-bold text-gray-900">{{ component.weight }}%</span>
@@ -99,11 +109,14 @@
                   title="Edit component">
                   <Edit2Icon class="w-4 h-4" />
                 </button>
-                <button @click="deleteComponent(component.id)"
+                <button v-if="component.type !== 'final_exam'" @click="deleteComponent(component.id)"
                   class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
                   title="Delete component">
                   <TrashIcon class="w-4 h-4" />
                 </button>
+                <div v-else class="p-2 text-gray-300" title="Final exam cannot be deleted">
+                  <TrashIcon class="w-4 h-4" />
+                </div>
               </div>
             </td>
           </tr>
@@ -135,16 +148,33 @@
           <span class="font-semibold">{{ sortedComponents.length }}</span>
           component{{ sortedComponents.length !== 1 ? 's' : '' }} total
         </div>
-        <div class="flex items-center">
-          <span class="text-sm text-gray-600 mr-3">Total Weight:</span>
+        <div class="flex items-center space-x-4">
           <div class="flex items-center">
-            <div class="w-24 bg-gray-200 rounded-full h-3 mr-3">
-              <div class="bg-gradient-to-r from-sky-400 to-sky-600 h-3 rounded-full transition-all duration-300"
-                :style="{ width: `${Math.min((totalWeight / 70) * 100, 100)}%` }"></div>
+            <span class="text-sm text-gray-600 mr-3">Continuous Assessment:</span>
+            <div class="flex items-center">
+              <div class="w-20 bg-gray-200 rounded-full h-3 mr-2">
+                <div class="h-3 rounded-full transition-all duration-300"
+                  :class="continuousAssessmentWeight > continuousAssessmentLimit ? 'bg-gradient-to-r from-red-400 to-red-600' : 'bg-gradient-to-r from-sky-400 to-sky-600'"
+                  :style="{ width: `${Math.min((continuousAssessmentWeight / continuousAssessmentLimit) * 100, 100)}%` }">
+                </div>
+              </div>
+              <span class="text-sm font-bold"
+                :class="continuousAssessmentWeight > continuousAssessmentLimit ? 'text-red-600' : 'text-gray-900'">
+                {{ continuousAssessmentWeight }}%
+              </span>
             </div>
-            <span class="text-sm font-bold" :class="totalWeight > 100 ? 'text-red-600' : 'text-gray-900'">
-              {{ totalWeight }}%
-            </span>
+          </div>
+          <div class="flex items-center">
+            <span class="text-sm text-gray-600 mr-3">Total Weight:</span>
+            <div class="flex items-center">
+              <div class="w-20 bg-gray-200 rounded-full h-3 mr-2">
+                <div class="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-300"
+                  :style="{ width: `${Math.min(totalWeight, 100)}%` }"></div>
+              </div>
+              <span class="text-sm font-bold" :class="totalWeight !== 100 ? 'text-orange-600' : 'text-gray-900'">
+                {{ totalWeight }}%
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -173,7 +203,15 @@ export default {
       type: Object,
       required: true
     },
-    totalWeight: {
+    totalWeight: { // Prop from parent
+      type: Number,
+      required: true
+    },
+    continuousAssessmentWeight: { // Prop from parent
+      type: Number,
+      required: true
+    },
+    continuousAssessmentLimit: { // Prop from parent
       type: Number,
       required: true
     }
@@ -184,6 +222,10 @@ export default {
       const { sortBy, sortDirection } = this;
 
       return [...components].sort((a, b) => {
+        // Always put final exam first for visual consistency
+        if (a.type === 'final_exam' && b.type !== 'final_exam') return -1;
+        if (b.type === 'final_exam' && a.type !== 'final_exam') return 1;
+
         const valueA = a[sortBy];
         const valueB = b[sortBy];
 
@@ -204,7 +246,8 @@ export default {
         'assignment': 'bg-blue-100 text-blue-700 border border-blue-200',
         'test': 'bg-amber-100 text-amber-700 border border-amber-200',
         'lab': 'bg-purple-100 text-purple-700 border border-purple-200',
-        'project': 'bg-rose-100 text-rose-700 border border-rose-200'
+        'project': 'bg-rose-100 text-rose-700 border border-rose-200',
+        'final_exam': 'bg-red-100 text-red-700 border border-red-200'
       };
       return classes[type] || 'bg-gray-100 text-gray-700 border border-gray-200';
     },
@@ -214,7 +257,8 @@ export default {
         'assignment': '📄',
         'test': '📊',
         'lab': '🔬',
-        'project': '🚀'
+        'project': '🚀',
+        'final_exam': '🎓'
       };
       return icons[type] || '📋';
     },
@@ -224,7 +268,8 @@ export default {
         'assignment': 'Take-home work',
         'test': 'Major examination',
         'lab': 'Practical work',
-        'project': 'Long-term assignment'
+        'project': 'Long-term assignment',
+        'final_exam': 'Final examination'
       };
       return descriptions[type] || 'Course component';
     },

@@ -29,9 +29,9 @@
             Component Name
             <span class="text-red-500">*</span>
           </label>
-          <input v-model="form.name" type="text" required
+          <input v-model="form.name" type="text" required :readonly="isFinalExam"
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-sky-500 focus:ring-4 focus:ring-sky-100 placeholder-gray-400 text-gray-900"
-            placeholder="e.g., Quiz 1, Assignment 1">
+            :class="{ 'bg-gray-50 cursor-not-allowed': isFinalExam }" placeholder="e.g., Quiz 1, Assignment 1">
         </div>
 
         <!-- Type Selection -->
@@ -41,14 +41,16 @@
             <span class="text-red-500">*</span>
           </label>
           <div class="relative">
-            <select v-model="form.type" required
-              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-sky-500 focus:ring-4 focus:ring-sky-100 text-gray-900 bg-white appearance-none cursor-pointer">
+            <select v-model="form.type" required :disabled="isFinalExam"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-sky-500 focus:ring-4 focus:ring-sky-100 text-gray-900 bg-white appearance-none cursor-pointer"
+              :class="{ 'bg-gray-50 cursor-not-allowed': isFinalExam }">
               <option value="" disabled class="text-gray-400">Select component type</option>
               <option value="quiz" class="py-2">📝 Quiz</option>
               <option value="assignment" class="py-2">📄 Assignment</option>
               <option value="test" class="py-2">📊 Test</option>
               <option value="lab" class="py-2">🔬 Lab</option>
               <option value="project" class="py-2">🚀 Project</option>
+              <option value="final" class="py-2">🎓 Final Exam</option>
             </select>
             <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
               <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,9 +69,9 @@
               <span class="text-red-500">*</span>
             </label>
             <div class="relative">
-              <input v-model.number="form.max_mark" type="number" min="1" required
+              <input v-model.number="form.max_mark" type="number" min="1" required :readonly="isFinalExam"
                 class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-sky-500 focus:ring-4 focus:ring-sky-100 placeholder-gray-400 text-gray-900"
-                placeholder="100">
+                :class="{ 'bg-gray-50 cursor-not-allowed': isFinalExam }" placeholder="100">
             </div>
           </div>
 
@@ -80,14 +82,15 @@
               <span class="text-red-500">*</span>
             </label>
             <div class="relative">
-              <input v-model.number="form.weight" type="number" min="1" max="70" required
+              <input v-model.number="form.weight" type="number" min="1" :max="Math.floor(availableWeight + form.weight)"
+                required
                 class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-sky-500 focus:ring-4 focus:ring-sky-100 placeholder-gray-400 text-gray-900"
                 placeholder="15">
             </div>
             <div class="flex items-center justify-between text-xs">
               <span class="text-gray-500">Available weight</span>
               <span class="font-semibold text-sky-600 bg-sky-50 px-2 py-1 rounded-full">
-                {{ availableWeight }}%
+                {{ availableWeight.toFixed(1) }}%
               </span>
             </div>
           </div>
@@ -131,13 +134,17 @@ export default {
     PlusIcon
   },
   props: {
-    component: {
+    component: { // The component being edited (null if adding new)
       type: Object,
-      default: () => null
+      default: null
     },
-    availableWeight: {
+    availableWeight: { // Maximum weight allowed for the current operation
       type: Number,
       required: true
+    },
+    isFinalExam: { // Flag to indicate if the component is the Final Exam
+      type: Boolean,
+      default: false
     }
   },
   emits: ['close', 'save'],
@@ -167,16 +174,32 @@ export default {
           max_mark: '',
           weight: ''
         };
+        // Set default for new final exam if applicable
+        if (!newVal && this.isFinalExam) {
+          this.form.name = 'Final Exam';
+          this.form.type = 'final_exam';
+          this.form.max_mark = 100;
+          this.form.weight = 30; // Default weight for auto-created final exam
+        }
+        this.error = ''; // Clear error on component change
+      }
+    },
+    availableWeight(newVal) {
+      if (this.form.weight > newVal && !this.isEditMode) {
+        this.form.weight = newVal; // Clamp new component weight
       }
     }
   },
   methods: {
     handleSubmit() {
-      if (this.form.weight > this.availableWeight) {
-        this.error = `Weight cannot exceed ${this.availableWeight}%.`;
+      this.error = ''; // Clear previous errors
+
+      const submittedWeight = parseFloat(this.form.weight);
+
+      if (submittedWeight > this.availableWeight + (this.component ? parseFloat(this.component.weight) : 0)) {
+        this.error = `Weight cannot exceed ${this.availableWeight.toFixed(2)}%.`;
         return;
       }
-      this.error = '';
       this.$emit('save', { ...this.form });
     }
   }

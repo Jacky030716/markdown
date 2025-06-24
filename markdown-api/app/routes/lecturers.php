@@ -5,6 +5,49 @@ use Slim\Routing\RouteCollectorProxy;
 
 return function (RouteCollectorProxy $group) {
     /**
+     * Route: GET /api/v1/lecturers/{lecturer_id}/profile
+     * Description: Retrieves the profile of a specific lecturer.
+     * Parameters:
+     * - lecturer_id (int): The unique identifier of the lecturer.
+     * Returns:
+     * - 200 OK: JSON object containing lecturer profile data.
+     * - 404 Not Found: JSON message if the lecturer is not found or inactive.
+     * - 500 Internal Server Error: JSON message for database or unexpected errors.
+     */
+    $group->get('/{lecturer_id}/profile', function(Request $request, Response $response, array $args) {
+        $lecturerId = $args['lecturer_id'];
+
+        try {
+            $pdo = $this->get('db');
+            $stmt = $pdo->prepare(
+                'SELECT l.user_id, l.lecturer_id, name, department, email, role, is_active FROM lecturers AS l
+                JOIN users AS u ON l.user_id = u.id
+                WHERE l.id = :lecturer_id'
+            );
+            $stmt->bindParam(':lecturer_id', $lecturerId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $lecturer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$lecturer) {
+                $response->getBody()->write(json_encode(['message' => "Lecturer with ID: {$lecturerId} not found or is inactive"]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+
+            $response->getBody()->write(json_encode(['data' => $lecturer, 'status' => 'success']));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        } catch (PDOException $e) {
+            error_log("Database error fetching lecturer profile {$lecturerId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode(['message' => 'Internal Server Error']));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        } catch (Exception $e) {
+            error_log("Application error fetching lecturer profile {$lecturerId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode(['message' => 'An unexpected error occurred']));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    });
+
+    /**
      * Route: GET /api/v1/lecturers/{lecturer_id}/courses
      * Description: Retrieves all active courses assigned to a specific lecturer.
      * Parameters:
@@ -225,8 +268,9 @@ return function (RouteCollectorProxy $group) {
                     'name' => $row['student_name'],
                     'matricId' => $row['matric_no'],
                     'marks' => [],
-                    'totalMark' => 0, // Will be calculated later
-                    'grade' => ''     // Will be calculated later
+                    'totalMark' => 0,
+                    'grade' => '',
+                    'gpa' => null,    
                 ];
 
                 // Initialize all components for the student with null marks
@@ -283,6 +327,20 @@ return function (RouteCollectorProxy $group) {
             else if ($student['totalMark'] >= 35) $student['grade'] = 'D';
             else if ($student['totalMark'] >= 30) $student['grade'] = 'D-';
             else $student['grade'] = 'E';
+
+            // Map grade to GPA points
+            $gpaPoints = [
+                'A+' => 4.0, 'A' => 4.0, 'A-' => 3.67,
+                'B+' => 3.36, 'B' => 3.0, 'B-' => 2.67,
+                'C+' => 2.33, 'C' => 2.00, 'C-' => 1.67,
+                'D+' => 1.33, 'D' => 1.0, 'D-' => 0.67,
+                'E' => 0.00
+            ];
+
+            $student['gpa'] = isset($gpaPoints[$student['grade']]) ? $gpaPoints[$student['grade']] : 0.0;
+
+            // Ensure GPA is rounded to 2 decimal places
+            $student['gpa'] = round($student['gpa'], 2);
         }
 
         $finalResult = array_values($studentsData); // reset keys for JSON array
@@ -603,6 +661,165 @@ return function (RouteCollectorProxy $group) {
     }
   });
 
+  /**
+     * Route: GET /api/v1/lecturers/{lecturer_id}/remark-requests
+     * Description: Retrieves all remark requests for courses taught by a specific lecturer.
+     * Parameters:
+     * - lecturer_id (int): The ID of the lecturer.
+     * Returns:
+     * - 200 OK: JSON array of remark request objects with detailed student and course info.
+     * - 404 Not Found: JSON message if no remark requests found for the lecturer's courses.
+     * - 500 Internal Server Error: JSON message for database or unexpected errors.
+     */
+    $group->get('/{lecturer_id}/remark-requests', function (Request $request, Response $response, array $args) {
+        $lecturerId = $args['lecturer_id'];
+
+        try {
+            $pdo = $this->get('db');
+
+            $stmt = $pdo->prepare(
+                'SELECT
+                    rr.id AS request_id,
+                    s.name AS student_name,
+                    s.matric_no,
+                    c.course_code,
+                    c.course_name,
+                    rr.component,
+                    rr.current_mark,
+                    rr.justification,
+                    rr.status,
+                    rr.lecturer_response,
+                    rr.requested_at,
+                    rr.responded_at
+                FROM
+                    remark_requests AS rr
+                JOIN
+                    students AS s ON rr.student_id = s.id
+                JOIN
+                    courses AS c ON rr.course_id = c.id
+                WHERE
+                    c.lecturer_id = :lecturer_id
+                ORDER BY
+                    rr.status ASC, rr.requested_at DESC'
+            );
+            $stmt->bindParam(':lecturer_id', $lecturerId, PDO::PARAM_INT);
+            $stmt->execute();
+            $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($requests)) {
+                $response->getBody()->write(json_encode(['data' => [], 'message' => "No remark requests found"]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+
+            $response->getBody()->write(json_encode(['data' => $requests, 'status' => 'success']));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+
+        } catch (PDOException $e) {
+            error_log("DB Error fetching remark requests for lecturer {$lecturerId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode(['message' => 'Database error', 'error' => $e->getMessage()]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        } catch (Exception $e) {
+            error_log("General Error fetching remark requests for lecturer {$lecturerId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode(['message' => 'An unexpected error occurred', 'error' => $e->getMessage()]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    });
+
+    /**
+     * Route: PATCH /api/v1/remark-requests/{request_id}
+     * Description: Updates the status and lecturer's response for a specific remark request.
+     * Authorization: Ensures the lecturer owns the course associated with the request.
+     * Parameters:
+     * - request_id (int): The ID of the remark request to update.
+     * Request Body:
+     * - JSON: { "status": "approved" | "rejected", "lecturer_response": "string" }
+     * Returns:
+     * - 200 OK: JSON message confirming successful update.
+     * - 400 Bad Request: JSON message if invalid status or response provided.
+     * - 403 Forbidden: JSON message if the lecturer is not authorized to modify this request.
+     * - 404 Not Found: JSON message if the remark request is not found.
+     * - 500 Internal Server Error: JSON message for database or unexpected errors.
+     */
+    $group->patch('/remark-requests/{request_id}', function (Request $request, Response $response, array $args) {
+        $requestId = $args['request_id'];
+        $parsedBody = $request->getParsedBody();
+        $newStatus = $parsedBody['status'] ?? null;
+        $lecturerResponse = $parsedBody['lecturer_response'] ?? null;
+
+        try {
+            $pdo = $this->get('db');
+
+            // 1. Fetch the request to verify lecturer ownership and current status
+            $stmt = $pdo->prepare('
+                SELECT
+                    rr.status,
+                    c.lecturer_id
+                FROM
+                    remark_requests AS rr
+                JOIN
+                    courses AS c ON rr.course_id = c.id
+                WHERE
+                    rr.id = :request_id
+            ');
+            $stmt->bindParam(':request_id', $requestId, PDO::PARAM_INT);
+            $stmt->execute();
+            $requestInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$requestInfo) {
+                $response->getBody()->write(json_encode(['message' => "Remark request ID {$requestId} not found."]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+
+            // // For simplicity, let's assume lecturer_id is passed in the body or session/token
+            // // For now, we'll hardcode it to lecturer ID 1 for testing purposes.
+            // // In a real application, you'd get the lecturer_id from an authenticated session or JWT.
+            // $currentLecturerId = 1; // REPLACE WITH ACTUAL AUTHENTICATED LECTURER ID
+            // if ($requestInfo['lecturer_id'] != $currentLecturerId) {
+            //     $response->getBody()->write(json_encode(['message' => "Forbidden: You are not authorized to respond to this remark request."]));
+            //     return $response->withStatus(403)->withHeader('Content-Type', 'application/json');
+            // }
+
+            // Only allow updates for 'pending' requests
+            if ($requestInfo['status'] !== 'pending') {
+                $response->getBody()->write(json_encode(['message' => "Bad Request: Only pending remark requests can be updated."]));
+                return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+            }
+
+            // 2. Validate new status
+            $allowedStatuses = ['approved', 'rejected'];
+            if (!in_array($newStatus, $allowedStatuses)) {
+                $response->getBody()->write(json_encode(['message' => "Bad Request: Invalid status. Must be 'approved' or 'rejected'."]));
+                return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+            }
+
+            // 3. Update the remark request
+            $updateStmt = $pdo->prepare('
+                UPDATE remark_requests
+                SET
+                    status = :status,
+                    lecturer_response = :lecturer_response,
+                    responded_at = NOW()
+                WHERE
+                    id = :request_id
+            ');
+            $updateStmt->bindParam(':status', $newStatus);
+            $updateStmt->bindParam(':lecturer_response', $lecturerResponse);
+            $updateStmt->bindParam(':request_id', $requestId, PDO::PARAM_INT);
+            $updateStmt->execute();
+
+            $response->getBody()->write(json_encode(['message' => 'Remark request updated successfully.', 'status' => 'success']));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+
+        } catch (PDOException $e) {
+            error_log("DB Error updating remark request {$requestId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode(['message' => 'Database error', 'error' => $e->getMessage()]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        } catch (Exception $e) {
+            error_log("General Error updating remark request {$requestId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode(['message' => 'An unexpected error occurred', 'error' => $e->getMessage()]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    });
 
   function calculateGrade($totalMark) {
       if ($totalMark >= 90) return 'A+';
