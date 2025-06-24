@@ -119,8 +119,13 @@ export default {
           valA = parseFloat(valA || 0);
           valB = parseFloat(valB || 0);
         } else if (sortKey.value === 'grade') {
-          // Custom sort for grades (A+ > A > B...)
-          const gradeOrder = { 'A+': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'F': 0 };
+          const gradeOrder = {
+            'A+': 12, 'A': 11, 'A-': 10,
+            'B+': 9, 'B': 8, 'B-': 7,
+            'C+': 6, 'C': 5, 'C-': 4,
+            'D+': 3, 'D': 2, 'D-': 1,
+            'E': 0
+          };
           valA = gradeOrder[valA] || 0;
           valB = gradeOrder[valB] || 0;
         } else {
