@@ -1,6 +1,7 @@
 <template>
   <div v-if="show" class="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-1/2 -translate-y-1/2 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div
+      class="max-h-[90vh] overflow-y-auto relative top-1/2 -translate-y-1/2 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white">
       <div class="mt-3">
         <h3 class="text-lg font-medium text-gray-900 mb-4 text-center">
           Edit Marks for {{ student?.name }} ({{ student?.matricId }})

@@ -52,7 +52,6 @@ export default {
       const response = await apiClient.get(
         `/lecturers/${lecturerId}/courses/${courseId}/students/analysis`
       );
-      console.log("Fetched students analysis:", response.data);
 
       return response.data;
     } catch (error) {

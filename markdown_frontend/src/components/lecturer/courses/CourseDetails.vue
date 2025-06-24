@@ -13,14 +13,13 @@
           <p class="text-sky-600 font-semibold text-3xl">{{ selectedCourse.course_code }}</p>
           <h2 class="text-3xl font-bold text-gray-800">- {{ selectedCourse.course_name }}</h2>
         </div>
-        <button @click="openAddModal"
+        <button @click="openAddModal(false)"
           class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 cursor-pointer">
           <PlusIcon class="w-5 h-5 text-white" />
           <span>Add Component</span>
         </button>
       </div>
 
-      <!-- Weight Summary -->
       <div class="mb-6 p-4 bg-gray-50 rounded-lg">
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-semibold text-gray-800">Assessment Weight Summary</h3>
@@ -29,13 +28,11 @@
               :class="getContinuousAssessmentWeight() > getContinuousAssessmentLimit() ? 'text-red-600' : 'text-sky-600'">
               {{ getContinuousAssessmentWeight() }}%
             </div>
-            <div class="text-sm text-gray-600">
+            <div class="text-sm text-gray-600" v-if="getRemainingWeight > 0">
               <span class="text-amber-500">
-                {{ (getContinuousAssessmentLimit() - getContinuousAssessmentWeight()).toFixed(1) }}%
+                {{ getRemainingWeight.toFixed(1) }}%
               </span>
-              remaining for
-              continuous
-              assessment
+              remaining for continuous assessment
             </div>
           </div>
         </div>
@@ -44,16 +41,14 @@
         </div>
       </div>
 
-      <!-- Components Table -->
       <MarkComponentTable :selectedCourse="selectedCourse" :totalWeight="getTotalWeight()"
         :continuousAssessmentWeight="getContinuousAssessmentWeight()"
         :continuousAssessmentLimit="getContinuousAssessmentLimit()" @edit-component="openEditModal"
         @delete-component="deleteMarkComponent" />
     </div>
 
-    <!-- Modal for Adding/Editing Components -->
     <MarkComponentFormModal v-if="showModal" :component="editingComponent" :availableWeight="getAvailableWeight()"
-      :isFinalExam="editingComponent?.type === 'final_exam'" @close="closeModal" @save="handleSaveComponent" />
+      :componentTypeToForce="componentTypeToForce" @close="closeModal" @save="handleSaveComponent" />
   </div>
 </template>
 
@@ -77,6 +72,7 @@ export default {
       showModal: false,
       editingComponent: null,
       defaultFinalExamWeight: 30,
+      componentTypeToForce: null, // New data property to force component type in modal
     }
   },
   props: {
@@ -91,7 +87,7 @@ export default {
       async handler(newCourseId) {
         if (newCourseId) {
           // Check if final exam component exists for the current course
-          const finalExamExists = this.selectedCourse.components.some(c => c.name.toLowerCase() === 'final exam' || c.type === 'final');
+          const finalExamExists = this.selectedCourse.components.some(c => c.type === 'final'); // Check only for type 'final'
           if (!finalExamExists) {
             console.log("No Final Exam component found, creating default...");
             // Automatically create a default Final Exam component
@@ -101,32 +97,71 @@ export default {
       }
     }
   },
+  computed: {
+    getRemainingWeight() {
+      return 100 - this.getTotalWeight();
+    },
+  },
   methods: {
     backToCourses() {
       this.$router.push({ name: 'Courses' });
     },
-    openAddModal() {
+    // Modified openAddModal to accept a parameter for forced type
+    openAddModal(isFinalExam = false) {
       this.showModal = true;
       this.editingComponent = null;
+      this.componentTypeToForce = isFinalExam ? 'final' : null; // Set to 'final' if it's the final exam
     },
     // Recalculate total weight based on current components
     getTotalWeight() {
-      return this.selectedCourse.components.reduce((total, component) => total + parseFloat(component.weight), 0);
+      if (!this.selectedCourse.components || !Array.isArray(this.selectedCourse.components)) {
+        return 0;
+      }
+
+      return this.selectedCourse.components
+        .filter(c => c && c.weight != null) // Filter out null components and components without weight
+        .reduce((total, component) => {
+          const weight = parseFloat(component.weight);
+          return total + (isNaN(weight) ? 0 : weight);
+        }, 0);
     },
     getFinalExamWeight() {
-      const finalExam = this.selectedCourse.components.find(c => c.type === 'final_exam');
-      return finalExam ? parseFloat(finalExam.weight) : 0;
+      if (!this.selectedCourse.components || !Array.isArray(this.selectedCourse.components)) {
+        return 0;
+      }
+
+      const finalExam = this.selectedCourse.components.find(c =>
+        c && c.type === 'final' // Only check for type 'final'
+      );
+
+      if (!finalExam || finalExam.weight == null) {
+        return 0;
+      }
+
+      const weight = parseFloat(finalExam.weight);
+      return isNaN(weight) ? 0 : weight;
     },
     getContinuousAssessmentWeight() {
+      if (!this.selectedCourse.components || !Array.isArray(this.selectedCourse.components)) {
+        return 0;
+      }
+
       return this.selectedCourse.components
-        .filter(c => c.type !== 'final_exam')
-        .reduce((total, component) => total + parseFloat(component.weight), 0);
+        .filter(c => {
+          // Filter out null/undefined components and non-final exam components
+          return c && c.type !== 'final';
+        })
+        .reduce((total, component) => {
+          // Ensure weight exists and is a valid number
+          const weight = component.weight != null ? parseFloat(component.weight) : 0;
+          return total + (isNaN(weight) ? 0 : weight);
+        }, 0);
     },
     getContinuousAssessmentLimit() {
       return 100 - this.getFinalExamWeight();
     },
     getAvailableWeight() {
-      if (this.editingComponent && this.editingComponent.type === 'final_exam') {
+      if (this.editingComponent && this.editingComponent.type === 'final') {
         // If editing the final exam, available weight is 100% minus the sum of ALL continuous assessment components.
         // It's the maximum allowed for the final exam without exceeding 100% total.
         const continuousAssessmentTotal = this.getContinuousAssessmentWeight();
@@ -149,16 +184,18 @@ export default {
     closeModal() {
       this.showModal = false;
       this.editingComponent = null;
+      this.componentTypeToForce = null; // Clear the forced type on close
     },
     openEditModal(component) {
       this.showModal = true;
       this.editingComponent = { ...component }; // Create a copy to prevent direct mutation
+      this.componentTypeToForce = component.type; // Set forced type based on edited component's type
     },
     async deleteMarkComponent(componentId) {
       const component = this.selectedCourse.components.find(c => c.id === componentId);
 
       // Prevent deletion of final exam
-      if (component && component.type === 'final_exam') {
+      if (component && component.type === 'final') {
         alert("Final exam cannot be deleted. You can only edit its weight.");
         return;
       }
@@ -174,6 +211,7 @@ export default {
           course_id: this.selectedCourse.id
         });
         if (response.status === "success") {
+          // Immediately update the local data
           this.selectedCourse.components = this.selectedCourse.components.filter(c => c.id !== componentId);
           toast.success("Component deleted successfully.");
         } else {
@@ -185,7 +223,7 @@ export default {
       }
     },
     async handleSaveComponent(componentData) {
-      const isFinalExam = componentData.type === 'final_exam';
+      const isFinalExam = componentData.type === 'final';
       let proposedWeight = parseFloat(componentData.weight);
 
       // Calculate available weight considering the component being edited
@@ -193,18 +231,17 @@ export default {
       if (this.editingComponent && this.editingComponent.id === componentData.id) {
         // If editing the current component, temporarily remove its weight from the total
         const componentsExcludingCurrent = this.selectedCourse.components.filter(c => c.id !== componentData.id);
-        const totalWeightExcludingCurrent = componentsExcludingCurrent.reduce((sum, comp) => sum + parseFloat(comp.weight), 0);
 
         if (isFinalExam) {
           const continuousAssessmentTotal = componentsExcludingCurrent
-            .filter(c => c.type !== 'final_exam')
+            .filter(c => c.type !== 'final')
             .reduce((sum, comp) => sum + parseFloat(comp.weight), 0);
           currentAvailableWeight = 100 - continuousAssessmentTotal;
         } else {
-          const finalExamWeight = componentsExcludingCurrent.find(c => c.type === 'final_exam')?.weight || 0;
+          const finalExamWeight = componentsExcludingCurrent.find(c => c.type === 'final')?.weight || 0;
           const continuousAssessmentLimit = 100 - finalExamWeight;
           const otherContinuousAssessmentTotal = componentsExcludingCurrent
-            .filter(c => c.type !== 'final_exam')
+            .filter(c => c.type !== 'final')
             .reduce((sum, comp) => sum + parseFloat(comp.weight), 0);
           currentAvailableWeight = continuousAssessmentLimit - otherContinuousAssessmentTotal;
         }
@@ -213,9 +250,13 @@ export default {
         currentAvailableWeight = this.getAvailableWeight(); // Uses existing logic which correctly calculates for new component
       }
 
-      if (proposedWeight > currentAvailableWeight) {
+      const effectiveMaxWeight = this.editingComponent && this.editingComponent.id === componentData.id
+        ? currentAvailableWeight + (this.editingComponent.weight || 0) // When editing, allow up to current weight + available
+        : currentAvailableWeight; // When adding, allow up to available
+
+      if (proposedWeight > effectiveMaxWeight + 0.01) { // Add a small epsilon for floating point comparison
         const assessmentType = isFinalExam ? 'final exam' : 'continuous assessment';
-        toast.error(`Weight cannot exceed ${currentAvailableWeight.toFixed(1)}% for this ${assessmentType}.`);
+        toast.error(`Weight cannot exceed ${effectiveMaxWeight.toFixed(1)}% for this ${assessmentType}.`);
         return;
       }
 
@@ -231,6 +272,7 @@ export default {
             });
             if (response.status === "success") {
               // Update the local data with the server response (assuming server returns the updated data)
+              // Ensure componentData includes all necessary fields, especially the 'type' for filtering later
               this.selectedCourse.components.splice(index, 1, { ...componentData, id: this.editingComponent.id });
               toast.success("Component updated successfully.");
             } else {
@@ -246,6 +288,7 @@ export default {
         // Add new component
         const newComponent = {
           course_id: this.selectedCourse.id,
+          weight: parseFloat(componentData.weight).toFixed(2),
           ...componentData
         };
 
@@ -253,8 +296,10 @@ export default {
           const response = await coursesApi.addNewMarkComponent(newComponent);
           if (response.status === "success") {
             toast.success("Component added successfully.");
-            // Append the new component returned from the API (which should have an ID)
-            this.selectedCourse.components.push(response.data); // Assuming response.data contains the new component with ID
+            this.selectedCourse.components.push({
+              ...newComponent,
+              id: response.id
+            });
           } else {
             throw new Error(response.message || "Failed to add new component");
           }
@@ -267,18 +312,18 @@ export default {
       this.closeModal();
     },
     async addDefaultFinalExamComponent() {
-      const defaultFinalExam = {
+      const defaultFinalExamData = {
         name: 'Final Exam',
         type: 'final',
         max_mark: 100,
         weight: this.defaultFinalExamWeight,
-        course_id: this.selectedCourse.id
       };
 
       try {
-        const response = await coursesApi.addNewMarkComponent(defaultFinalExam);
+        const response = await coursesApi.addNewMarkComponent(defaultFinalExamData);
         if (response.status === "success") {
           toast.info("Default Final Exam component added.");
+          // Add the newly created component directly to the list
           this.selectedCourse.components.push(response.data);
         } else {
           throw new Error(response.message || "Failed to add default Final Exam component.");

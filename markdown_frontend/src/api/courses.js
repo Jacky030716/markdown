@@ -15,6 +15,7 @@ export default {
         `/courses/${courseData.course_id}/marks`,
         courseData
       );
+
       return response.data;
     } catch (error) {
       console.error("Error fetching courses:", error);

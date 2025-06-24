@@ -98,7 +98,7 @@
         <!-- Demo Credentials -->
         <div class="mt-8 pt-6 border-t border-gray-200">
           <h3 class="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button v-for="credential in demoCredentials" :key="credential.role" @click="fillCredentials(credential)"
               class="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all duration-200 hover:shadow-md">
               <div class="text-xs font-medium text-gray-600 uppercase tracking-wide">{{ credential.role }}</div>
@@ -131,7 +131,8 @@ const router = useRouter();
 const demoCredentials = [
   { role: 'Lecturer', email: 'lecturer1@utm.my', password: 'lecturer1' },
   { role: 'Student', email: 'student1@utm.my', password: 'student1' },
-  { role: 'Admin', email: 'admin@utm.my', password: 'admin1234' }
+  { role: 'Admin', email: 'admin@utm.my', password: 'admin1234' },
+  { role: 'Advisor', email: 'advisor1@utm.my', password: 'advisor1' }
 ];
 
 // Computed properties
@@ -197,8 +198,6 @@ const handleLogin = async () => {
       toast.error('Invalid email or password. Please try again.');
     }
 
-    console.log('Login response:', user);
-
     if (user.status === 'success') {
       const { role, email, id } = user.data;
 
@@ -216,6 +215,9 @@ const handleLogin = async () => {
           break;
         case 'admin':
           router.push('/admin/dashboard');
+          break;
+        case 'advisor':
+          router.push('/advisor/dashboard');
           break;
         default:
           router.push('/dashboard');
