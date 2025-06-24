@@ -23,5 +23,6 @@ return function (App $app) {
     $app->group('/api/v1', function (Group $group){
         $group->group('/lecturers', require __DIR__ . '/routes/lecturers.php'); 
         $group->group('/courses', require __DIR__ . '/routes/courses.php'); 
+        $group->group('/students', require __DIR__ . '/routes/students.php'); 
     });
 };

@@ -10,8 +10,8 @@ export default [
         },
         {
           path: "marks",
-          name: "MarksBreakdown",
-          component: () => import("../views/student/MarksBreakdown.vue"),
+          name: "CourseMark",
+          component: () => import("../views/student/CourseMark.vue"),
         },
         {
           path: "remark",

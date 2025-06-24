@@ -38,7 +38,7 @@ export default {
       {
         to: '/student/marks',
         icon: 'ChartPie',
-        label: 'Marks Breakdown',
+        label: 'Course Mark',
       },
       {
         to: '/student/remark',
