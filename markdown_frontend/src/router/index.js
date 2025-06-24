@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import lecturerRoutes from "./lecturerRoutes";
-// import studentRoutes from "./studentRoutes";
-// import advisorRoutes from "./advisorRoutes";
+import studentRoutes from "./studentRoutes";
+import advisorRoutes from "./advisorRoutes";
 // import adminRoutes from "./adminRoutes";
 
 const routes = [
@@ -12,8 +12,8 @@ const routes = [
     component: () => import("../views/Login.vue"),
   },
   ...lecturerRoutes,
-  // ...studentRoutes,
-  // ...advisorRoutes,
+  ...studentRoutes,
+  ...advisorRoutes,
   // ...adminRoutes,
   {
     path: "/:catchAll(.*)",
