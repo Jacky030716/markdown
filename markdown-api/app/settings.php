@@ -24,7 +24,6 @@ return function (ContainerBuilder $containerBuilder) {
                 'db' => [
                     'driver' => 'mysql',
                     'host' => 'localhost',
-                    'port' => 3307,
                     'database' => 'markdown', // <-- DB NAME
                     'username' => 'root',      // <-- DB USER
                     'password' => '',  // <-- DB PASSWORD
