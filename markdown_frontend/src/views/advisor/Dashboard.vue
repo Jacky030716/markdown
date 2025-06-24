@@ -59,6 +59,10 @@ export default {
       isLoading.value = true;
       try {
         const advisees = await advisorsApi.getAllAdvisees(1);
+        // we will change 1 above with the actual advisor ID later
+
+
+
         allAdvisees.value = advisees.data || []; // Access the 'data' key
         console.log("Advisees fetched successfully:", allAdvisees.value);
       } catch (error) {
