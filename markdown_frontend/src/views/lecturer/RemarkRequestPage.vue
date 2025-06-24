@@ -2,29 +2,23 @@
   <div class="p-6 bg-gray-100 min-h-screen font-sans">
     <h1 class="text-3xl font-bold text-gray-800 mb-8">Remark Requests</h1>
 
-    <!-- Filters and Status Summary -->
     <div
-      class="bg-white shadow-md rounded-lg p-6 mb-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+      class="bg-white shadow-md rounded-lg p-6 mb-8 flex flex-col sm:flex-row justify-between items-end space-y-4 sm:space-y-0 gap-6">
       <div class="flex-grow">
-        <label for="statusFilter" class="sr-only">Filter by Status</label>
-        <select id="statusFilter" v-model="filterStatus"
-          class="block w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500">
-          <option value="all">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
-      </div>
-      <div class="flex-shrink-0 text-gray-700 text-sm">
-        <span class="font-semibold">{{ filteredRequests.length }}</span> requests displayed (Total: {{
-          allRequests.length }})
+        <EnhancedSelect id="statusFilterEnhanced" v-model="filterStatus" :options="statusOptions"
+          label="Filter by Status" placeholder="Select a status" class="w-full sm:w-auto" />
       </div>
     </div>
 
-    <!-- Remark Requests Table -->
+    <div v-if="!isLoading && allRequests.length > 0" class="text-right font-semibold text-gray-500 mb-4">
+      Total Requests:
+      <span class="text-amber-600 font-bold">
+        {{ allRequests.length }}
+      </span>
+    </div>
+
     <RemarkRequestTable :requests="filteredRequests" @view-details="openRequestDetailModal" />
 
-    <!-- No Requests State -->
     <div v-if="!isLoading && allRequests.length === 0" class="text-center py-20 text-gray-500 text-xl">
       No remark requests found for your courses.
     </div>
@@ -36,7 +30,7 @@
       No requests matching the selected filter.
     </div>
 
-    <!-- Remark Request Detail Modal -->
+
     <RemarkRequestDetailModal v-if="showDetailModal" :request="selectedRequest" @close="closeRequestDetailModal"
       @update-request="handleUpdateRequest" />
   </div>
@@ -48,21 +42,30 @@ import RemarkRequestTable from '../../components/lecturer/remark-request/RemarkR
 import RemarkRequestDetailModal from '../../components/lecturer/remark-request/RemarkRequestDetailModal.vue';
 import { toast } from 'vue-sonner';
 import lecturers from '../../api/lecturers';
+import EnhancedSelect from '../../components/common/EnhancedSelect.vue'; // Ensure this import path is correct
 
 export default {
   name: 'RemarkRequestsPage',
   components: {
     RemarkRequestTable,
-    RemarkRequestDetailModal
+    RemarkRequestDetailModal,
+    EnhancedSelect // Register the component
   },
   setup() {
     const allRequests = ref([]);
-    const filterStatus = ref('all');
+    const filterStatus = ref('all'); // This will now bind to the value from EnhancedSelect
     const isLoading = ref(true);
     const showDetailModal = ref(false);
     const selectedRequest = ref(null);
 
-    const lecturerId = localStorage.getItem('id')
+    const lecturerId = localStorage.getItem('id');
+
+    const statusOptions = ref([
+      { label: 'All Statuses', value: 'all' },
+      { label: 'Pending', value: 'pending' },
+      { label: 'Approved', value: 'approved' },
+      { label: 'Rejected', value: 'rejected' },
+    ]);
 
     const fetchRemarkRequests = async () => {
       isLoading.value = true;
@@ -133,6 +136,7 @@ export default {
       showDetailModal,
       selectedRequest,
       filteredRequests,
+      statusOptions,
       openRequestDetailModal,
       closeRequestDetailModal,
       handleUpdateRequest

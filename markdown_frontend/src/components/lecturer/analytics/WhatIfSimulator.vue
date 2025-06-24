@@ -2,7 +2,7 @@
   <div v-if="show"
     class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
     <div
-      class="relative p-8 border w-11/12 md:w-3/4 lg:w-2/3 xl:w-1/2 shadow-lg rounded-md bg-white transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+      class="max-h-[90vh] overflow-y-auto relative p-8 border w-11/12 md:w-3/4 lg:w-2/3 xl:w-1/2 shadow-lg rounded-md bg-white transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-2xl font-bold text-gray-900">
           "What-If" Simulator for {{ student?.name }} ({{ student?.matricId }})
@@ -263,9 +263,16 @@ export default {
             },
             title: {
               display: true,
-              text: 'Simulated Component Contribution'
+              text: 'Simulated Component Contribution',
+              position: 'top',
+              padding: {
+                bottom: 20
+              }
             },
             tooltip: {
+              padding: {
+                top: 10
+              },
               callbacks: {
                 label: function (context) {
                   let label = context.label || '';

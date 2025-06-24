@@ -26,7 +26,7 @@ export default {
   },
   data() {
     return {
-      students: [],
+      // students: [],
       courses: [],
       isLoading: true
     };
@@ -36,16 +36,13 @@ export default {
   },
   methods: {
     async loadData() {
+      const lecturerId = localStorage.getItem('id') || 1;
+
       try {
         this.isLoading = true;
 
-        // Fetch data from API
-        const [studentsResponse, coursesResponse] = await Promise.all([
-          lecturersApi.getStudentMarks(1, 1),
-          lecturersApi.getTaughtCourses(1)
-        ]);
+        const coursesResponse = await lecturersApi.getTaughtCourses(lecturerId);
 
-        this.students = studentsResponse.data;
         this.courses = coursesResponse.data;
       } catch (error) {
         console.error("Error fetching data:", error);

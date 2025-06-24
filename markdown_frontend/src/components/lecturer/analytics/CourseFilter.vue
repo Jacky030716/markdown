@@ -1,41 +1,43 @@
 <template>
+  <!-- Clear Filters -->
+  <div class="flex justify-end mb-2">
+    <button @click="clearFilters" v-if="selectedYear || selectedSemester || internalSelectedCourseId"
+      class="inline-flex items-center gap-1 border border-gray-100 px-4 py-1.5 rounded-lg text-sm font-medium text-rose-700 hover:text-rose-600 hover:bg-gray-50 transition-all duration-200 cursor-pointer hover:scale-105">
+      <XIcon />
+      Clear Filters
+    </button>
+  </div>
   <div class="flex flex-wrap items-center space-y-4 md:space-y-0 md:space-x-4">
     <div class="w-full md:w-auto flex-grow">
-      <label for="academicYear" class="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
-      <select id="academicYear" v-model="selectedYear" @change="filterCourses"
-        class="mt-1 block w-full pl-3 pr-10 py-3 text-base sm:text-sm rounded-md shadow-sm outline-none focus:ring-2 focus:ring-sky-500">
-        <option value="">All Years</option>
-        <option v-for="year in uniqueAcademicYears" :key="year" :value="year">{{ year }}</option>
-      </select>
+      <EnhancedSelect v-model="selectedYear" :options="uniqueAcademicYears.map(year => ({ value: year, label: year }))"
+        placeholder="Select Academic Year" @change="filterCourses" label="Academic Year" />
     </div>
 
     <div class="w-full md:w-auto flex-grow">
-      <label for="semester" class="block text-sm font-medium text-gray-700 mb-1">Semester</label>
-      <select id="semester" v-model="selectedSemester" @change="filterCourses"
-        class="mt-1 block w-full pl-3 pr-10 py-3 text-base sm:text-sm rounded-md shadow-sm outline-none focus:ring-2 focus:ring-sky-500">
-        <option value="">All Semesters</option>
-        <option v-for="semester in uniqueSemesters" :key="semester" :value="semester">{{ semester }}</option>
-      </select>
+      <EnhancedSelect v-model="selectedSemester"
+        :options="uniqueSemesters.map(semester => ({ value: semester, label: semester }))" placeholder="Select Semester"
+        @change="filterCourses" label="Semester" />
     </div>
 
     <div class="w-full md:w-auto flex-grow md:flex-grow-0 md:min-w-[200px]">
-      <label for="course" class="block text-sm font-medium text-gray-700 mb-1">Select Course</label>
-      <select id="course" v-model="internalSelectedCourseId" @change="emitSelectedCourse"
-        class="mt-1 block w-full pl-3 pr-10 py-3 text-base sm:text-sm rounded-md shadow-sm outline-none focus:ring-2 focus:ring-sky-500">
-        <option :value="null">-- Select a Course --</option>
-        <option v-for="course in filteredCourses" :key="course.id" :value="course.id">
-          {{ course.course_code }} - {{ course.course_name }}
-        </option>
-      </select>
+      <EnhancedSelect v-model="internalSelectedCourseId"
+        :options="filteredCourses.map(course => ({ value: course.id, label: `${course.course_code} - ${course.course_name}` }))"
+        placeholder="Select Course" @change="emitSelectedCourse" label="Select Course" />
     </div>
   </div>
 </template>
 
 <script>
 import { ref, computed, watch } from 'vue';
+import EnhancedSelect from '../../common/EnhancedSelect.vue';
+import { XIcon } from 'lucide-vue-next';
 
 export default {
   name: 'CourseFilter',
+  components: {
+    EnhancedSelect,
+    XIcon
+  },
   props: {
     courses: {
       type: Array,
@@ -87,6 +89,12 @@ export default {
       emit('course-selected', selectedCourse);
     };
 
+    const clearFilters = () => {
+      selectedYear.value = '';
+      selectedSemester.value = '';
+      internalSelectedCourseId.value = null; // Reset course selection
+    };
+
     // Watch for changes in props.courses to initialize or reset internal state if needed
     watch(() => props.courses, (newCourses) => {
       // If the previously selected course is no longer in the new list of courses, reset selection
@@ -104,7 +112,8 @@ export default {
       uniqueSemesters,
       filteredCourses,
       filterCourses,
-      emitSelectedCourse
+      emitSelectedCourse,
+      clearFilters
     };
   }
 };
