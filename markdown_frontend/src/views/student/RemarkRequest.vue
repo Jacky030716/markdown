@@ -53,7 +53,7 @@ export default {
       
       try {
         console.log('Fetching courses with components for student:', this.studentId);
-        // Use the new API method that includes components
+        //  API method that to fetch course of students includes the components
         const response = await studentsApi.getCoursesWithComponents(this.studentId);
         console.log('API Response:', response);
         

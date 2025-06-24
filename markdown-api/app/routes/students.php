@@ -27,6 +27,155 @@ function calculateGrades($mark)
 
 return function (RouteCollectorProxy $group) {
 
+    //1. For Dashboard Page
+    /**
+     * Route: GET /api/v1/students/{studentId}/progress-summary
+     * Description: Retrieves a summary of student's overall academic progress.
+     * Parameters:
+     * - studentId (int): The unique identifier of the student.
+     * Returns:
+     * - 200 OK: JSON object with overall progress statistics.
+     * - 500 Internal Server Error: JSON message for database or unexpected errors.
+     */
+    $group->get('/{studentId}/progress-summary', function (Request $request, Response $response, array $args) {
+        $studentId = intval($args['studentId']);
+
+        if ($studentId <= 0) {
+            $response->getBody()->write(json_encode([
+                'message' => 'Invalid student ID',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        try {
+            $pdo = $this->get('db');
+
+            // Get overall progress summary
+            $stmt = $pdo->prepare('
+                SELECT 
+                    COUNT(DISTINCT c.id) as total_courses,
+                    COUNT(DISTINCT CASE WHEN e.status = "enrolled" THEN c.id END) as enrolled_courses,
+                    COUNT(DISTINCT CASE WHEN e.status = "completed" THEN c.id END) as completed_courses,
+                    SUM(CASE WHEN e.status = "enrolled" THEN c.credit_hours ELSE 0 END) as current_credit_hours,
+                    SUM(CASE WHEN e.status = "completed" THEN c.credit_hours ELSE 0 END) as completed_credit_hours
+                FROM enrollments e
+                JOIN courses c ON e.course_id = c.id
+                WHERE e.student_id = :student_id AND c.is_active = 1
+            ');
+            $stmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $progressSummary = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Convert to integers
+            foreach ($progressSummary as $key => $value) {
+                $progressSummary[$key] = (int)$value;
+            }
+
+            $response->getBody()->write(json_encode([
+                'data' => $progressSummary,
+                'status' => 'success',
+                'message' => 'Progress summary retrieved successfully'
+            ]));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        } catch (PDOException $e) {
+            error_log("Database error fetching progress summary for student {$studentId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'message' => 'Internal Server Error',
+                'error' => $e->getMessage(),
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        } catch (Exception $e) {
+            error_log("General error fetching progress summary: " . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'message' => 'Internal Server Error',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    });
+
+
+    /**
+     * Route: GET /api/v1/students/{studentId}/info
+     * Description: Retrieves detailed information about a student based on their student_id.
+     * Parameters:
+     * - studentId (int): The unique identifier of the student.
+     * Returns:
+     * - 200 OK: JSON object with student information.
+     * - 500 Internal Server Error: JSON message for database or unexpected errors.
+     */
+    $group->get('/{studentId}/info', function (Request $request, Response $response, array $args) {
+        $studentId = intval($args['studentId']);
+
+        if ($studentId <= 0) {
+            $response->getBody()->write(json_encode([
+                'message' => 'Invalid student ID',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        try {
+            $pdo = $this->get('db');
+
+            // Get student info along with their program, year_of_study, and advisor details
+            $stmt = $pdo->prepare('
+            SELECT 
+                s.id as student_id, 
+                s.matric_no, 
+                s.name, 
+                s.program, 
+                s.year_of_study, 
+                a.name as advisor_name, 
+                a.department as advisor_department 
+            FROM students s
+            LEFT JOIN advisors a ON s.advisor_id = a.id
+            WHERE s.id = :student_id
+        ');
+            $stmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $studentInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($studentInfo) {
+                $response->getBody()->write(json_encode([
+                    'data' => $studentInfo,
+                    'status' => 'success',
+                    'message' => 'Student information retrieved successfully'
+                ]));
+                return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+            } else {
+                $response->getBody()->write(json_encode([
+                    'message' => 'Student not found',
+                    'status' => 'error'
+                ]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+        } catch (PDOException $e) {
+            error_log("Database error fetching student info for student {$studentId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'message' => 'Internal Server Error',
+                'error' => $e->getMessage(),
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        } catch (Exception $e) {
+            error_log("General error fetching student info: " . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'message' => 'Internal Server Error',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    });
+
+
+
+
+    // 2. For Course Mark Page
     /**
      * Route: GET /api/v1/students/courses
      * Description: Retrieves all active courses for a specific student.
@@ -38,6 +187,10 @@ return function (RouteCollectorProxy $group) {
     $group->get('/courses', function (Request $request, Response $response, array $args) {
         // Mock Student ID - in production, get this from JWT token or session
         $studentId = 4; // Changed to 4 as requested
+
+        //actual pattern '/${studentId}/courese'
+        // actual code 
+        // $studentId = intval($args['studentId']);
 
         try {
             $pdo = $this->get('db');
@@ -304,74 +457,7 @@ return function (RouteCollectorProxy $group) {
         }
     });
 
-    /**
-     * Route: GET /api/v1/students/{studentId}/progress-summary
-     * Description: Retrieves a summary of student's overall academic progress.
-     * Parameters:
-     * - studentId (int): The unique identifier of the student.
-     * Returns:
-     * - 200 OK: JSON object with overall progress statistics.
-     * - 500 Internal Server Error: JSON message for database or unexpected errors.
-     */
-    $group->get('/{studentId}/progress-summary', function (Request $request, Response $response, array $args) {
-        $studentId = intval($args['studentId']);
 
-        if ($studentId <= 0) {
-            $response->getBody()->write(json_encode([
-                'message' => 'Invalid student ID',
-                'status' => 'error'
-            ]));
-            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
-        }
-
-        try {
-            $pdo = $this->get('db');
-
-            // Get overall progress summary
-            $stmt = $pdo->prepare('
-                SELECT 
-                    COUNT(DISTINCT c.id) as total_courses,
-                    COUNT(DISTINCT CASE WHEN e.status = "enrolled" THEN c.id END) as enrolled_courses,
-                    COUNT(DISTINCT CASE WHEN e.status = "completed" THEN c.id END) as completed_courses,
-                    SUM(CASE WHEN e.status = "enrolled" THEN c.credit_hours ELSE 0 END) as current_credit_hours,
-                    SUM(CASE WHEN e.status = "completed" THEN c.credit_hours ELSE 0 END) as completed_credit_hours
-                FROM enrollments e
-                JOIN courses c ON e.course_id = c.id
-                WHERE e.student_id = :student_id AND c.is_active = 1
-            ');
-            $stmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
-            $stmt->execute();
-
-            $progressSummary = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            // Convert to integers
-            foreach ($progressSummary as $key => $value) {
-                $progressSummary[$key] = (int)$value;
-            }
-
-            $response->getBody()->write(json_encode([
-                'data' => $progressSummary,
-                'status' => 'success',
-                'message' => 'Progress summary retrieved successfully'
-            ]));
-            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
-        } catch (PDOException $e) {
-            error_log("Database error fetching progress summary for student {$studentId}: " . $e->getMessage());
-            $response->getBody()->write(json_encode([
-                'message' => 'Internal Server Error',
-                'error' => $e->getMessage(),
-                'status' => 'error'
-            ]));
-            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
-        } catch (Exception $e) {
-            error_log("General error fetching progress summary: " . $e->getMessage());
-            $response->getBody()->write(json_encode([
-                'message' => 'Internal Server Error',
-                'status' => 'error'
-            ]));
-            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
-        }
-    });
 
 
     // 3. For Remark Request Page
@@ -488,9 +574,9 @@ return function (RouteCollectorProxy $group) {
     });
 
     //get all course of student with their the related component of each course
-    $group->get('/courses-with-components', function (Request $request, Response $response, array $args) {
+        $group->get('/{studentId}/courses-with-components', function (Request $request, Response $response, array $args) {
         // Mock Student ID - in production, get this from JWT token or session
-        $studentId = 4; // Keep consistent with your system
+        $studentId = (int)$args['studentId'];
 
         try {
             $pdo = $this->get('db');

@@ -4,9 +4,7 @@
     <WelcomeCard :student="student" />
 
     <!-- Quick Stats -->
-    <div class="quick-stats">
-      <QuickStats :stats="stats" />
-    </div>
+    <QuickStats :stats="stats" />
 
     <!-- Courses Section -->
     <CourseOverview :courses="courses" />
@@ -21,6 +19,7 @@ import WelcomeCard from '../../components/student/dashboard/WelcomeCard.vue';
 import QuickStats from '../../components/student/dashboard/QuickStats.vue';
 import CourseOverview from '../../components/student/dashboard/CourseOverview.vue';
 import RecentUpdates from '../../components/student/dashboard/RecentUpdates.vue';
+import studentsApi from "../../api/students";  // Import the API calls
 
 export default {
   name: 'Dashboard',
@@ -32,39 +31,12 @@ export default {
   },
   data() {
     return {
-      student: {
-        name: 'John Smith',
-        id: 'A20EC0234',
-        program: 'Computer Science',
-        year: 'Year 3',
-        semester: 'Semester 2'
-      },
-      stats: [
-        { icon: '🎯', value: '3.45', label: 'Current GPA' },
-        { icon: '📚', value: '6', label: 'Enrolled Courses' },
-        { icon: '📈', value: '78.5%', label: 'Average Score' },
-      ],
-      courses: [
-        {
-          code: 'SECJ 3483', title: 'Web Technology', grade: 78.5, rank: '12th', progress: 85
-        },
-        {
-          code: 'SECJ 3453', title: 'Database Systems', grade: 82.3, rank: '8th', progress: 75
-        },
-        {
-          code: 'SECJ 3543', title: 'Software Engineering', grade: 76.8, rank: '15th', progress: 70
-        },
-        {
-          code: 'SECJ 3443', title: 'Data Structures', grade: 81.2, rank: '9th', progress: 80
-        },
-        {
-          code: 'SECJ 3463', title: 'Computer Networks', grade: 79.1, rank: '11th', progress: 65
-        },
-        {
-          code: 'SECJ 3473', title: 'Operating Systems', grade: 77.6, rank: '13th', progress: 60
-        }
-      ],
+      studentId: 4, // Mock student ID, replace this when login feature is implemented
+      student: {}, // Empty object to be populated with student details
+      stats: [], // Initially empty, will be populated with progress summary stats
+      courses: [], // Courses data will be populated here
       updates: [
+        // Sample data, modify as needed
         {
           icon: '📊', title: 'New marks uploaded for Web Technology', desc: 'Assignment 2 marks have been updated', time: '2 hours ago'
         },
@@ -79,20 +51,61 @@ export default {
         }
       ]
     };
+  },
+  created() {
+    this.fetchStudentDetails(this.studentId);  // Pass the student ID to fetch details
+    this.fetchProgressSummary(this.studentId);  // Pass student ID for progress summary
+    this.fetchCourses(this.studentId);  // Fetch the courses for the student
+  },
+  methods: {
+    async fetchStudentDetails(studentId) {
+      try {
+        const response = await studentsApi.getStudentDetails(studentId);
+        this.student = response.data;  // Set student data
+      } catch (error) {
+        console.error("Error fetching student details:", error);
+        // You could also display an error message to the user here
+      }
+    },
+
+    async fetchProgressSummary(studentId) {
+      try {
+        const progress = await studentsApi.getProgressSummary(studentId);
+        this.stats = [
+          { icon: '⏰', value: progress.data.current_credit_hours, label: 'Current Credit Hours' },
+          { icon: '📚', value: progress.data.total_courses, label: 'Total Courses' },
+          { icon: '🏆', value: progress.data.completed_courses, label: 'Completed Courses' },
+        ];
+      } catch (error) {
+        console.error("Error fetching progress summary:", error);
+      }
+    },
+
+    async fetchCourses(studentId) {
+      try {
+        const response = await studentsApi.getAllCourses(studentId);  // Fetch courses
+        
+        // Check if the response has the expected structure
+        if (response && response.data) {
+          this.courses = response.data;  // Set the courses data directly
+        } else {
+          console.error("Unexpected API response structure:", response);
+          this.courses = []; // Set empty array as fallback
+        }
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        this.courses = []; // Set empty array as fallback
+        // You could also display an error message to the user here
+      }
+    }
   }
 };
 </script>
 
 <style scoped>
 .container {
-  max-width: 1400px;
+  max-width: 1500px;
   margin: 0 auto;
   padding: 30px;
-}
-.quick-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 25px;
-  margin-bottom: 40px;
 }
 </style>
