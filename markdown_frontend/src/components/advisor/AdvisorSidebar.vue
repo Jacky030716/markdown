@@ -7,12 +7,12 @@ import {
   FileText,
   AlertTriangle,
   BarChart3,
-  Settings,
+  LogOut,
   ChevronLeft,
   ChevronRight,
   MessageSquare
 } from "lucide-vue-next"
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 export default {
   name: 'AdvisorSidebar',
@@ -23,16 +23,23 @@ export default {
     FileText,
     AlertTriangle,
     BarChart3,
-    Settings,
+    LogOut,
     ChevronLeft,
     ChevronRight,
     MessageSquare
   },
   setup() {
     const isExpanded = ref(true)
+    const router = useRouter()
 
     const toggleSidebar = () => {
       isExpanded.value = !isExpanded.value
+    }
+
+    const handleLogout = () => {
+      if (confirm('Are you sure you want to logout?')) {
+        router.push('/')
+      }
     }
 
     const menuItems = [
@@ -41,12 +48,6 @@ export default {
         icon: 'Home',
         label: 'Dashboard',
         description: 'Overview of all advisees and at-risk students'
-      },
-      {
-        to: '/advisor/advisees',
-        icon: 'Users',
-        label: 'My Advisees',
-        description: 'Complete list of students under supervision'
       },
       {
         to: '/advisor/at-risk',
@@ -77,7 +78,8 @@ export default {
     return {
       isExpanded,
       toggleSidebar,
-      menuItems
+      menuItems,
+      handleLogout
     }
   },
 }
@@ -96,7 +98,7 @@ export default {
           <!-- Toggle Button -->
           <button 
             @click="toggleSidebar"
-            class="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 border border-gray-500 focus:outline-none"
           >
             <ChevronLeft v-if="isExpanded" class="w-5 h-5 text-gray-600" />
             <ChevronRight v-else class="w-5 h-5 text-gray-600" />
@@ -152,18 +154,18 @@ export default {
 
       <!-- Footer -->
       <div class="p-4 border-t border-gray-200">
-        <RouterLink to="/advisor/settings" :class="[
-          'flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200',
+        <button @click="handleLogout" :class="[
+          'w-full flex items-center px-3 py-2.5 rounded-lg text-red-700 hover:bg-red-100 hover:text-red-900 hover:shadow-md transition-all duration-200 font-medium',
           !isExpanded && 'justify-center'
         ]">
-          <Settings :class="[
+          <LogOut :class="[
             'flex-shrink-0 w-5 h-5',
             isExpanded ? 'mr-3' : ''
           ]" />
           <span v-if="isExpanded" class="transition-opacity duration-300">
-            Settings
+            Logout
           </span>
-        </RouterLink>
+        </button>
       </div>
     </div>
   </div>

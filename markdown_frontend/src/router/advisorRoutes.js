@@ -9,11 +9,6 @@ export default [
         component: () => import("../views/advisor/Dashboard.vue"),
       },
       {
-        path: "advisees",
-        name: "MyAdvisees",
-        component: () => import("../views/advisor/Advisees.vue"),
-      },
-      {
         path: "advisee/:studentId",
         name: "AdviseeProfile",
         component: () => import("../views/advisor/AdviseeProfile.vue"),
