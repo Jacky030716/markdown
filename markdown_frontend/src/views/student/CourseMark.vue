@@ -119,60 +119,8 @@ export default {
     const analyticsError = ref(null);
 
     // Student ID - hardcoded for now since login isn't implemented
-    const studentId = ref(4);
+    const studentId = ref(localStorage.getItem('student_id'));
 
-    // Dummy data for components that don't have API endpoints yet
-    const comparisonData = ref([
-      {
-        student: "Student A",
-        quiz1: "95%",
-        assignment1: "92%",
-        lab1: "100%",
-        quiz2: "90%",
-        final: "95%",
-        total: "94.2%",
-      },
-      {
-        student: "You",
-        quiz1: "100%",
-        assignment1: "100%",
-        lab1: "100%",
-        quiz2: "100%",
-        final: "88%",
-        total: "94.8%",
-      },
-      {
-        student: "Student C",
-        quiz1: "85%",
-        assignment1: "88%",
-        lab1: "95%",
-        quiz2: "80%",
-        final: "82%",
-        total: "85.1%",
-      },
-      {
-        student: "Student D",
-        quiz1: "85%",
-        assignment1: "88%",
-        lab1: "95%",
-        quiz2: "80%",
-        final: "82%",
-        total: "85.1%",
-      },
-    ]);
-
-    // const currentMarks = ref({
-    //   total: 94.8,
-    //   weight: 70,
-    // });
-
-    // const remainingWeight = ref({
-    //   quiz1: 30,
-    //   assignment2: 16,
-    // });
-
-    // const quiz1Score = ref(85);
-    // const assignment2Score = ref(90);
 
     // Computed property for progress data
     const progressData = computed(() => {
@@ -380,7 +328,6 @@ export default {
       selectedCourse,
       marksData,
       progressData,
-      comparisonData,
       coursesLoading,
       marksLoading,
       error,

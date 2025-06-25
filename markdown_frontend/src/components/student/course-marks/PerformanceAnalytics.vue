@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-header">
       <div class="card-icon">📊</div>
-      <h2 class="card-title">Performance Analytics</h2>
+      <h2 class="card-title">Performance Analytics & Class Average per Component</h2>
     </div>
 
     <div v-if="loading" class="loading-container">

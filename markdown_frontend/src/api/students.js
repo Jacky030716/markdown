@@ -82,7 +82,7 @@ async getStudentIdByUserId(userId) {
   async getAllCourses(studentId) {
     try {
       // The API endpoint doesn't use studentId in the URL, it's hardcoded in PHP
-      const response = await apiClient.get("/students/courses");
+      const response = await apiClient.get(`/students/${studentId}/courses`);
 
       // Return the response data directly - let the component handle the structure
       return response.data;

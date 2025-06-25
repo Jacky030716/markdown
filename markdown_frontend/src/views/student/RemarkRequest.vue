@@ -36,7 +36,7 @@ export default {
     return {
       courses: [],    // To hold courses data
       requests: [],   // To hold request history
-      studentId: 4,   // Match the PHP hardcoded value
+      studentId: localStorage.getItem('student_id'),   // Match the PHP hardcoded value
       loading: false,
       error: null
     };
