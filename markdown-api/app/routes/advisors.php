@@ -5,7 +5,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Routing\RouteCollectorProxy;
 
 header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Access-Control-Allow-Credentials: true");
 
@@ -54,6 +54,7 @@ return function (RouteCollectorProxy $group) {
         $coursesStmt = $pdo->prepare(
           'SELECT 
                     c.id AS course_id,
+                    c.course_code,
                     c.course_name,
                     c.credit_hours,
                     e.status
@@ -147,6 +148,7 @@ return function (RouteCollectorProxy $group) {
 
           // Add course to enrolled courses array
           $coursesEnrolled[] = [
+            'course_code' => $course['course_code'],
             'course_name' => $course['course_name'],
             'credits' => $creditHours,
             'totalMark' => $totalMark,
@@ -409,7 +411,7 @@ return function (RouteCollectorProxy $group) {
 
       // Return success response with data
       $response->getBody()->write(json_encode(['data' => $finalResult, 'status' => 'success']));
-      return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+      return $response->withHeader('Content-Type', value: 'application/json')->withStatus(200);
     } catch (PDOException $e) {
       error_log("DB Error fetching student marks for lecturer {$lecturerId} in course {$courseId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'Database error', 'error' => $e->getMessage()]));
@@ -719,21 +721,4 @@ return function (RouteCollectorProxy $group) {
       return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
     }
   });
-
-
-  // function calculateGrade($totalMark) {
-  //     if ($totalMark >= 90) return 'A+';
-  //     if ($totalMark >= 80) return 'A';
-  //     if ($totalMark >= 75) return 'A-';
-  //     if ($totalMark >= 70) return 'B+';
-  //     if ($totalMark >= 65) return 'B';
-  //     if ($totalMark >= 60) return 'B-';
-  //     if ($totalMark >= 55) return 'C+';
-  //     if ($totalMark >= 50) return 'C';
-  //     if ($totalMark >= 45) return 'C-';
-  //     if ($totalMark >= 40) return 'D+';
-  //     if ($totalMark >= 35) return 'D';
-  //     if ($totalMark >= 30) return 'D-';
-  //     return 'E';
-  // }
 };

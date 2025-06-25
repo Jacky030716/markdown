@@ -9,11 +9,6 @@ export default [
         component: () => import("../views/advisor/Dashboard.vue"),
       },
       {
-        path: "advisees",
-        name: "MyAdvisees",
-        component: () => import("../views/advisor/Advisees.vue"),
-      },
-      {
         path: "advisee/:studentId",
         name: "AdviseeProfile",
         component: () => import("../views/advisor/AdviseeProfile.vue"),
@@ -39,17 +34,7 @@ export default [
         path: "analytics",
         name: "AdvisorAnalytics",
         component: () => import("../views/advisor/Analytics.vue"),
-      },
-      {
-        path: "reports",
-        name: "AdvisorReports",
-        component: () => import("../views/advisor/Reports.vue"),
-      },
-      {
-        path: "settings",
-        name: "AdvisorSettings",
-        component: () => import("../views/advisor/Settings.vue"),
-      },
+      }
     ],
   },
 ];
