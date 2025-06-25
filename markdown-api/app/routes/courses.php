@@ -3,6 +3,16 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Routing\RouteCollectorProxy;
 
+header("Access-Control-Allow-Origin: http://localhost:5173");
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Allow-Credentials: true");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 return function (RouteCollectorProxy $group){
   /**
    * Route: POST /api/v1/courses/{course_id}/marks
@@ -52,7 +62,7 @@ return function (RouteCollectorProxy $group){
         return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
       }
 
-      $response->getBody()->write(json_encode(['message' => "Marks component added successfully for course ID: {$courseId}", 'status' => 'success']));
+      $response->getBody()->write(json_encode(['message' => "Marks component added successfully for course ID: {$courseId}", 'status' => 'success', 'id' => $pdo->lastInsertId()]));
       return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
 
 

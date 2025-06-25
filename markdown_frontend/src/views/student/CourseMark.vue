@@ -1,38 +1,60 @@
 <template>
-  <div class=" bg-gray-100 min-h-screen font-sans">
+  <div class="bg-gray-100 min-h-screen font-sans">
     <div class="header">
-      <h1>📊 Course Marks</h1>
+      <h1>Course Marks</h1>
       <CourseSelector
         :courses="allCourses"
+        :loading="coursesLoading"
         @course-selected="handleCourseSelection"
       />
     </div>
     <div class="main-content">
-      <ProgressSection :marksData="marksData" />
-
-      <!-- Wrapper for the new grid layout -->
-      <div class="grid-wrapper">
-        <div class="grid-row grid-60-40">
-          <MarksBreakdown :marksData="marksData" />
-          <PerformanceAnalytics :marksData="marksData" />
+      <!-- Show loading state -->
+      <div v-if="coursesLoading" class="loading-container">
+        <p>Loading courses...</p>
+      </div>
+      
+      <!-- Show message when no course is selected -->
+      <div v-else-if="!selectedCourse" class="no-selection-container">
+        <p class="text-gray-600 text-center py-8">Please select a course to view your marks and progress.</p>
+      </div>
+      
+      <!-- Show course content when course is selected -->
+      <div v-else>
+        <!-- Loading state for marks -->
+        <div v-if="marksLoading" class="loading-container">
+          <p>Loading course data...</p>
         </div>
+        
+        <!-- Course content - only show when not loading and has data -->
+        <div v-else-if="!marksLoading && selectedCourse">
+          <ProgressSection :progressData="progressData" />
 
-        <div class="grid-row grid-30-70">
-          <ClassRanking />
-          <PerformanceComparison :comparisonData="comparisonData" />
-        </div>
+          <!-- Wrapper for the new grid layout -->
+          <div class="grid-wrapper">
+            <div class="grid-row grid-60-40">
+              <MarksBreakdown :marksData="marksData" />
+              <PerformanceAnalytics :marksData="marksData" />
+            </div>
 
-        <!-- This component will take the full width -->
-        <div class="full-width-component">
-          <!-- Passing the necessary data to WhatIfSimulator.vue -->
-          <WhatIfSimulator
-            :currentMarks="currentMarks"
-            :remainingWeight="remainingWeight"
-            :quiz1Score="quiz1Score"
-            :assignment2Score="assignment2Score"
-            @update:quiz1Score="quiz1Score = $event"
-            @update:assignment2Score="assignment2Score = $event"
-          />
+            <div class="grid-row grid-30-70">
+              <ClassRanking />
+              <PerformanceComparison :comparisonData="comparisonData" />
+            </div>
+
+            <!-- This component will take the full width -->
+            <div class="full-width-component">
+              <!-- Passing the necessary data to WhatIfSimulator.vue -->
+              <WhatIfSimulator
+                :currentMarks="currentMarks"
+                :remainingWeight="remainingWeight"
+                :quiz1Score="quiz1Score"
+                :assignment2Score="assignment2Score"
+                @update:quiz1Score="quiz1Score = $event"
+                @update:assignment2Score="assignment2Score = $event"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -40,7 +62,8 @@
 </template>
 
 <script>
-import { ref } from "vue"; // Import necessary functions from Vue
+import { ref, onMounted, computed, watch } from "vue";
+import studentsApi from "../../api/students"; // Adjust path if needed
 
 // Assuming these are valid paths to your components
 import CourseSelector from "../../components/student/course-marks/CourseSelector.vue";
@@ -63,63 +86,18 @@ export default {
     WhatIfSimulator,
   },
   setup() {
-    const allCourses = ref([
-      {
-        id: 1,
-        course_code: "CS101",
-        course_name: "Software Quality Assurance",
-        academic_year: "2024/2025",
-        semester: "Semester 1",
-        credit_hours: 3,
-      },
-      {
-        id: 2,
-        course_code: "CS201",
-        course_name: "Data Structures & Algorithms",
-        academic_year: "2024/2025",
-        semester: "Semester 1",
-        credit_hours: 3,
-      },
-      {
-        id: 3,
-        course_code: "CS301",
-        course_name: "Web Technology",
-        academic_year: "2024/2025",
-        semester: "Semester 2",
-        credit_hours: 3,
-      },
-    ]); // Dummy courses data
+    // Reactive states
+    const allCourses = ref([]);
+    const selectedCourse = ref(null);
+    const marksData = ref([]);
+    const coursesLoading = ref(false);
+    const marksLoading = ref(false);
+    const error = ref(null);
+    
+    // Student ID - hardcoded for now since login isn't implemented
+    const studentId = ref(5);
 
-    const selectedCourse = ref(null); // Reactive state for the selected course
-    const marksData = ref([
-      // Dummy marks data for performance analytics
-      { name: "Quiz 1", type: "quiz", mark: "18", max_mark: "20", weight: 5 },
-      {
-        name: "Assignment 1",
-        type: "assignment",
-        mark: "60",
-        max_mark: "60",
-        weight: 10,
-      },
-      { name: "Lab 1", type: "lab", mark: "30", max_mark: "30", weight: 4 },
-      { name: "Quiz 2", type: "quiz", mark: "16", max_mark: "20", weight: 5 },
-      {
-        name: "Final Exam",
-        type: "exam",
-        mark: "88",
-        max_mark: "100",
-        weight: 30,
-      },
-    ]); // Dummy marks data
-
-    // Dummy ranking data for ClassRanking.vue
-    const rankingData = ref({
-      studentRank: 5, // The student's rank
-      totalStudents: 30, // Total number of students
-      studentName: "John Doe", // Student's name
-    });
-
-    // Dummy performance comparison data for PerformanceComparison.vue
+    // Dummy data for components that don't have API endpoints yet
     const comparisonData = ref([
       {
         student: "Student A",
@@ -157,39 +135,160 @@ export default {
         final: "82%",
         total: "85.1%",
       },
-    ]); // Dummy comparison data
+    ]);
 
-    // Dummy data for WhatIfSimulator.vue
     const currentMarks = ref({
-      total: 94.8, // Current total grade (as a percentage)
-      weight: 70, // The weight of the completed components
+      total: 94.8,
+      weight: 70,
     });
 
     const remainingWeight = ref({
-      quiz1: 30, // Weight of the remaining quiz
-      assignment2: 16, // Weight of the remaining assignment
+      quiz1: 30,
+      assignment2: 16,
     });
 
-    // Default scores for the remaining components
-    const quiz1Score = ref(85); // Default score for Quiz 1
-    const assignment2Score = ref(90); // Default score for Assignment 2
+    const quiz1Score = ref(85);
+    const assignment2Score = ref(90);
+
+    // Computed property for progress data
+    const progressData = computed(() => {
+      if (!marksData.value || marksData.value.length === 0) {
+        return {
+          "Components Completed": { value: "0/0", label: "Assessments" },
+          "Total Weight Completed": { value: "0/100", label: "Percentage" },
+          "Current Total Mark": { value: "0%", label: "Average Score" }
+        };
+      }
+
+      const totalComponents = marksData.value.length;
+      const completedComponents = marksData.value.filter(item => item.mark !== null).length;
+      
+      const totalWeight = marksData.value.reduce((sum, item) => sum + parseFloat(item.weight), 0);
+      const completedWeight = marksData.value
+        .filter(item => item.mark !== null)
+        .reduce((sum, item) => sum + parseFloat(item.weight), 0);
+      
+      // Calculate weighted average of completed components
+      let weightedSum = 0;
+      let totalWeightForCompleted = 0;
+      
+      marksData.value.forEach(item => {
+        if (item.mark !== null) {
+          const percentage = (parseFloat(item.mark) / parseFloat(item.max_mark)) * 100;
+          weightedSum += percentage * parseFloat(item.weight);
+          totalWeightForCompleted += parseFloat(item.weight);
+        }
+      });
+      
+      const currentAverage = totalWeightForCompleted > 0 ? (weightedSum / totalWeightForCompleted).toFixed(1) : 0;
+
+      return {
+        "Components Completed": { 
+          value: `${completedComponents}/${totalComponents}`, 
+          label: "Assessments" 
+        },
+        "Total Weight Completed": { 
+          value: `${completedWeight.toFixed(0)}/${totalWeight.toFixed(0)}`, 
+          label: "Percentage" 
+        },
+        "Current Total Mark": { 
+          value: `${currentAverage}%`, 
+          label: "Average Score" 
+        }
+      };
+    });
+
+    // Fetch all courses
+    const fetchCourses = async () => {
+      coursesLoading.value = true;
+      error.value = null;
+      
+      try {
+        const response = await studentsApi.getAllCourses(studentId.value);
+        
+        if (response.status === 'success' && response.data) {
+          allCourses.value = response.data;
+        } else {
+          console.warn('No courses found or unexpected response structure:', response);
+          allCourses.value = [];
+        }
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+        error.value = 'Failed to load courses. Please try again.';
+        allCourses.value = [];
+      } finally {
+        coursesLoading.value = false;
+      }
+    };
+
+    // Fetch marks for selected course
+    const fetchMarks = async (courseId) => {
+      if (!courseId) return;
+      
+      marksLoading.value = true;
+      error.value = null;
+      
+      try {
+        const response = await studentsApi.getMarks(studentId.value, courseId);
+        
+        if (response.status === 'success' && response.data) {
+          marksData.value = response.data;
+        } else {
+          console.warn('No marks found or unexpected response structure:', response);
+          marksData.value = [];
+        }
+      } catch (err) {
+        console.error('Error fetching marks:', err);
+        error.value = 'Failed to load marks. Please try again.';
+        marksData.value = [];
+      } finally {
+        marksLoading.value = false;
+      }
+    };
 
     // Handle course selection
-    const handleCourseSelection = (course) => {
+    const handleCourseSelection = async (course) => {
+      // Clear previous data immediately when switching courses
+      marksData.value = [];
+      
       selectedCourse.value = course;
       console.log("Selected Course:", selectedCourse.value);
+      
+      if (course && course.id) {
+        await fetchMarks(course.id);
+      }
     };
+
+    // Watch for changes in selectedCourse to ensure data is cleared
+    watch(selectedCourse, (newCourse, oldCourse) => {
+      // If the course actually changed, clear the marks data
+      if (oldCourse && newCourse && oldCourse.id !== newCourse.id) {
+        marksData.value = [];
+      }
+      // If no course is selected, clear the data
+      if (!newCourse) {
+        marksData.value = [];
+      }
+    });
+
+    // Fetch courses on component mount
+    onMounted(() => {
+      fetchCourses();
+    });
 
     return {
       allCourses,
       selectedCourse,
       marksData,
-      comparisonData, // Passing comparisonData to PerformanceComparison.vue
-      rankingData, // Passing rankingData to ClassRanking.vue
-      currentMarks, // Passing currentMarks to WhatIfSimulator.vue
-      remainingWeight, // Passing remainingWeight to WhatIfSimulator.vue
-      quiz1Score, // Passing quiz1Score to WhatIfSimulator.vue
-      assignment2Score, // Passing assignment2Score to WhatIfSimulator.vue
+      progressData,
+      comparisonData,
+      currentMarks,
+      remainingWeight,
+      quiz1Score,
+      assignment2Score,
+      coursesLoading,
+      marksLoading,
+      error,
       handleCourseSelection,
     };
   },
@@ -204,7 +303,7 @@ export default {
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  padding: 20px; /* Added padding for better spacing on smaller screens */
+  padding: 20px;
 }
 
 h1 {
@@ -213,76 +312,56 @@ h1 {
   color: #1e293b;
 }
 
-/* Added styles for the header */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px 40px;
-  flex-wrap: wrap; /* Allows items to wrap on smaller screens */
+  flex-wrap: wrap;
 }
 
 .main-content {
-  padding: 0 40px 40px 40px; /* Adjusted padding */
+  padding: 0 40px 40px 40px;
 }
 
-/* --- New Grid Styles --- */
-.content-grid {
-  display: grid;
-  /* Creates two columns of equal width */
-  grid-template-columns: repeat(2, 1fr);
-  /* Adds space between grid items */
-  gap: 40px;
-  margin-top: 40px; /* Adds space above the grid */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 16px;
 }
 
-/* --- Responsive Media Query --- */
-/* For screens smaller than 1024px */
-@media (max-width: 1024px) {
-  .content-grid {
-    /* Switches to a single column layout */
-    grid-template-columns: 1fr;
-  }
-
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-  }
+.no-selection-container {
+  padding: 40px;
 }
 
-/* --- New Grid Styles --- */
 .grid-wrapper {
-  margin-top: 40px; /* Adds space above the grid layouts */
+  margin-top: 40px;
 }
 
 .grid-row {
   display: grid;
-  gap: 40px; /* Adds space between grid items */
+  gap: 40px;
 }
 
-/* Adds space between the grid rows and the full-width component */
 .grid-row + .grid-row,
 .grid-row + .full-width-component {
   margin-top: 40px;
 }
 
-/* First row: 60% and 40% split */
 .grid-60-40 {
-  grid-template-columns: 3fr 2fr; /* Creates a 60%/40% split */
+  grid-template-columns: 3fr 2fr;
 }
 
-/* Second row: 30% and 70% split */
 .grid-30-70 {
-  grid-template-columns: 3fr 7fr; /* Creates a 30%/70% split */
+  grid-template-columns: 3fr 7fr;
 }
 
-/* --- Responsive Media Query --- */
-/* For screens smaller than 1024px */
 @media (max-width: 1024px) {
   .grid-60-40,
   .grid-30-70 {
-    /* Switches to a single column layout */
     grid-template-columns: 1fr;
   }
 
@@ -293,7 +372,6 @@ h1 {
   }
 }
 
-/* For screens smaller than 768px */
 @media (max-width: 768px) {
   .header,
   .main-content {

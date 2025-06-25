@@ -93,13 +93,12 @@ export default {
     const studentsInSelectedCourse = ref([]); // Data from students/marks API
     const courseComponents = ref([]); // Derived from student marks for component averages
 
-    // --- Mock Lecturer ID (Replace with actual ID from authentication) ---
-    const lecturerId = 1;
+    const lecturerId = localStorage.getItem('id')
 
     // --- Data Fetching ---
     const fetchAllCourses = async () => {
       try {
-        const courses = await lecturersApi.getTaughtCourses(1);
+        const courses = await lecturersApi.getTaughtCourses(lecturerId);
         allCourses.value = courses.data;
         // Automatically select the first course if available
         if (allCourses.value.length > 0) {

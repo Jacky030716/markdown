@@ -21,9 +21,10 @@ return function (App $app) {
     });
 
     $app->group('/api/v1', function (Group $group) {
+        $group->group('/users', require __DIR__ . '/routes/users.php');
         $group->group('/lecturers', require __DIR__ . '/routes/lecturers.php');
         $group->group('/courses', require __DIR__ . '/routes/courses.php');
-        // $group->group('/students', require __DIR__ . '/routes/students.php');
+        $group->group('/students', require __DIR__ . '/routes/students.php');
         $group->group('/advisors', require __DIR__ . '/routes/advisors.php');
     });
 };

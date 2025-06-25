@@ -23,11 +23,11 @@ export default [
         name: "CourseManagement",
         component: () => import("../views/lecturer/CourseManagement.vue"),
       },
-      // {
-      //   path: "exam",
-      //   name: "FinalExam",
-      //   component: () => import("../views/lecturer/FinalExam.vue"),
-      // },
+      {
+        path: "remark_requests",
+        name: "RemarkRequests",
+        component: () => import("../views/lecturer/RemarkRequestPage.vue"),
+      },
       {
         path: "analytics",
         name: "Analytics",

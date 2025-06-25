@@ -12,7 +12,7 @@ export default {
   name: 'GradeDistributionChart',
   props: {
     gradesData: {
-      type: Object, // Expects an object like { 'A+': 5, 'A': 10, 'B': 15, ... }
+      type: Object,
       default: () => ({})
     }
   },
@@ -26,7 +26,7 @@ export default {
       }
 
       const ctx = gradeChartCanvas.value.getContext('2d');
-      const labels = ['A+', 'A', 'B', 'C', 'D', 'E', 'F'];
+      const labels = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'E', 'F'];
       const data = labels.map(label => props.gradesData[label] || 0);
 
       chartInstance = new Chart(ctx, {

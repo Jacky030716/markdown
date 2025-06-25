@@ -116,7 +116,7 @@ export default {
      * Calculates the grade distribution for the selected course.
      */
     const gradeDistribution = computed(() => {
-      const grades = { 'A+': 0, 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0 };
+      const grades = { 'A+': 0, 'A': 0, 'A-': 0, 'B+': 0, 'B': 0, 'B-': 0, 'C+': 0, 'C': 0, 'C-': 0, 'D+': 0, 'D': 0, 'D-': 0, 'E': 0, };
       processedStudents.value.forEach(student => {
         if (grades[student.grade] !== undefined) {
           grades[student.grade]++;
@@ -260,20 +260,6 @@ export default {
         // Also update individual component marks if simulation affects them
         // studentsInSelectedCourse.value[studentIndex].marks = simulationResult.simulatedMarks;
       }
-    };
-
-    /**
-     * Helper function to calculate grade based on total mark.
-     * Replicated here for clarity, but should be consistent with CourseMarkManagement.
-     */
-    const calculateGrade = (totalMark) => {
-      if (totalMark >= 90) return 'A+';
-      if (totalMark >= 80) return 'A';
-      if (totalMark >= 70) return 'B';
-      if (totalMark >= 60) return 'C';
-      if (totalMark >= 50) return 'D';
-      if (totalMark >= 40) return 'E';
-      return 'F';
     };
 
     return {

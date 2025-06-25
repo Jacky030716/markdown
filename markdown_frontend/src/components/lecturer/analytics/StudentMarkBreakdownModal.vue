@@ -2,7 +2,7 @@
   <div v-if="show"
     class="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
     <div
-      class="relative p-8 border w-11/12 md:w-3/4 lg:w-1/2 xl:w-2/5 shadow-lg rounded-md bg-white transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full">
+      class="relative p-8 border w-11/12 md:w-3/4 lg:w-1/2 xl:w-2/5 shadow-lg rounded-md bg-white transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-2xl font-bold text-gray-900">
           Mark Breakdown for {{ student?.name }} ({{ student?.matricId }})
@@ -26,6 +26,8 @@
                 </th>
                 <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Student
                   Mark</th>
+                <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -46,15 +48,20 @@
                   {{ getStudentComponentMark(student, component.component_name) !== null ?
                     getStudentComponentMark(student, component.component_name) : 'N/A' }}
                 </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-center">
+                  {{ getStudentPercentage(student, component.component_name) !== null ?
+                    getStudentPercentage(student, component.component_name) : 'N/A' }}%
+                </td>
               </tr>
               <!-- Summary Rows -->
               <tr class="bg-gray-50 font-semibold text-gray-900">
-                <td colspan="4" class="px-4 py-3 text-right">Total Mark:</td>
+                <td colspan="5" class="px-4 py-3 text-right">Total Mark:</td>
                 <td class="px-4 py-3 text-center">{{ (student.totalMark || 0).toFixed(1) }}%</td>
               </tr>
               <tr class="bg-gray-50 font-semibold text-gray-900">
-                <td colspan="4" class="px-4 py-3 text-right">Grade:</td>
-                <td class="px-4 py-3 text-center">{{ student.grade }}</td>
+                <td colspan="5" class="px-4 py-3 text-right">Grade:</td>
+                <td class="px-4 py-3 text-center" :class="getGradeColorClass(student.grade)">{{
+                  student.grade }}</td>
               </tr>
             </tbody>
           </table>
@@ -76,6 +83,7 @@
 
 <script>
 import { computed } from 'vue';
+import { getGradeColorClass } from '../../../utils/student-management/utils';
 
 export default {
   name: 'StudentMarkBreakdownModal',
@@ -114,11 +122,26 @@ export default {
      */
     const getStudentComponentMark = (student, componentName) => {
       const componentKey = getComponentKey(componentName);
-      return student.marks?.[componentKey]?.student_mark ?? null;
+      return parseFloat(student.marks?.[componentKey]?.student_mark ?? null) || null;
+    };
+
+    /**
+     * Gets the mark for a specific component for a student.
+     * Ensures robust access given the nested structure.
+     * @param {Object} student The student object.
+     * @param {string} componentName The name of the component (e.g., 'Quiz 1', 'Final Exam').
+     * @returns {number|null} The student's mark for that component, or null if not found.
+     */
+    const getStudentPercentage = (student, componentName) => {
+      const componentKey = getComponentKey(componentName);
+      return parseFloat(student.marks?.[componentKey]?.student_mark /
+        student.marks?.[componentKey]?.max_mark * student.marks?.[componentKey]?.weight).toFixed(2) || null;
     };
 
     return {
-      getStudentComponentMark
+      getStudentComponentMark,
+      getStudentPercentage,
+      getGradeColorClass
     };
   }
 };

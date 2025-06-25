@@ -8,21 +8,21 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assesment</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Mark</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight (%)</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weighted Score</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Assesment</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Your Mark</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Weight (%)</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Weighted Score</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="mark in marksData" :key="mark.name">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ mark.name }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ mark.type }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ mark.mark }} / {{ mark.max_mark }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ mark.weight }}%</td>
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">{{ mark.name }}</td>
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">{{ mark.type }}</td>
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-900">{{ mark.mark }} / {{ mark.max_mark }}</td>
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ mark.weight }}%</td>
               <!-- Calculate weighted score safely -->
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-900">
                 {{ getWeightedScore(mark).toFixed(2) }}
               </td>
             </tr>
@@ -32,7 +32,7 @@
         <!-- Total Weight Score Row -->
         <div class="px-6 py-4 flex justify-between bg-gray-50">
           <span class="font-semibold text-gray-800">TOTAL WEIGHT SCORE</span>
-          <span class="text-gray-800">
+          <span class="text-gray-800 mr-15">
             {{ totalWeightScore }} / {{ totalMaxWeightedScore }}
           </span>
         </div>
