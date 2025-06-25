@@ -67,12 +67,6 @@ export default {
         label: 'Analytics',
         description: 'Performance trends and advisee statistics'
       },
-      {
-        to: '/advisor/reports',
-        icon: 'FileText',
-        label: 'Reports',
-        description: 'Generate consultation and progress reports'
-      }
     ]
 
     return {

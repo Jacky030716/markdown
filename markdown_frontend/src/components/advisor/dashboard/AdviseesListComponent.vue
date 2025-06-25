@@ -90,7 +90,7 @@
           <!-- Status Filter -->
           <div class="relative">
             <select v-model="selectedStatus"
-              class="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm focus:outline-none ">
+              class="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm focus:outline-none hover:cursor-pointer">
               <option value="All Statuses">All Statuses</option>
               <option value="Good">Good</option>
               <option value="At Risk">At Risk</option>
@@ -110,49 +110,49 @@
           <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-200">
                   <tr>
                     <th class="px-6 py-4 text-left text-sm font-medium text-gray-600">Student Info</th>
-                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
-                      @click="handleSort('program')">
+                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-400"
+                      :class="{ 'bg-gray-400 hover:bg-gray-500 hover:text-white': sortField === 'program' }" @click="handleSort('program')">
                       <div class="flex items-center justify-center space-x-1">
                         <span>Program</span>
-                        <svg v-if="sortField === 'program'" class="w-4 h-4"
-                          :class="sortDirection === 'asc' ? 'transform rotate-180' : ''" fill="none"
-                          stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4"
+                          :class="sortField === 'program' && sortDirection === 'desc' ? 'transform rotate-180' : ''"
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
                     </th>
-                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
-                      @click="handleSort('year_of_study')">
+                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-400"
+                      :class="{ 'bg-gray-400 hover:bg-gray-500 hover:text-white': sortField === 'year_of_study' }" @click="handleSort('year_of_study')">
                       <div class="flex items-center justify-center space-x-1">
                         <span>Year</span>
-                        <svg v-if="sortField === 'year_of_study'" class="w-4 h-4"
-                          :class="sortDirection === 'asc' ? 'transform rotate-180' : ''" fill="none"
-                          stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4"
+                          :class="sortField === 'year_of_study' && sortDirection === 'desc' ? 'transform rotate-180' : ''"
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
                     </th>
-                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
-                      @click="handleSort('courses')">
+                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-400"
+                      :class="{ 'bg-gray-400 hover:bg-gray-500 hover:text-white': sortField === 'courses' }" @click="handleSort('courses')">
                       <div class="flex items-center justify-center space-x-1">
                         <span>Courses</span>
-                        <svg v-if="sortField === 'courses'" class="w-4 h-4"
-                          :class="sortDirection === 'asc' ? 'transform rotate-180' : ''" fill="none"
-                          stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4"
+                          :class="sortField === 'courses' && sortDirection === 'desc' ? 'transform rotate-180' : ''"
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
                     </th>
-                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
-                      @click="handleSort('gpa')">
+                    <th class="px-6 py-4 text-center text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-400"
+                      :class="{ 'bg-gray-400 hover:bg-gray-500 hover:text-white': sortField === 'gpa' }" @click="handleSort('gpa')">
                       <div class="flex items-center justify-center space-x-1">
                         <span>GPA</span>
-                        <svg v-if="sortField === 'gpa'" class="w-4 h-4"
-                          :class="sortDirection === 'asc' ? 'transform rotate-180' : ''" fill="none"
-                          stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4"
+                          :class="sortField === 'gpa' && sortDirection === 'desc' ? 'transform rotate-180' : ''"
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
@@ -169,15 +169,21 @@
                         <div class="text-sm text-gray-600">{{ student.matric_no }}</div>
                       </div>
                     </td>
-                    <td class="px-6 py-4 text-center text-sm text-gray-600">{{ student.program }}</td>
-                    <td class="px-6 py-4 text-center text-sm text-gray-600">Year {{ student.year_of_study }}</td>
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-6 py-4 text-center text-sm text-gray-600"
+                      :class="{ 'bg-gray-200': sortField === 'program' }">
+                      {{ student.program }}
+                    </td>
+                    <td class="px-6 py-4 text-center text-sm text-gray-600"
+                      :class="{ 'bg-gray-200': sortField === 'year_of_study' }">
+                      Year {{ student.year_of_study }}
+                    </td>
+                    <td class="px-6 py-4 text-center" :class="{ 'bg-gray-200': sortField === 'courses' }">
                       <div class="text-sm text-gray-800">{{ student.courses_enrolled?.length || 0 }} courses</div>
                       <div class="text-xs text-gray-500">
                         {{ getTotalCredits(student) }} credits
                       </div>
                     </td>
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-6 py-4 text-center" :class="{ 'bg-gray-200': sortField === 'gpa' }">
                       <span :class="getGPAColor(student.gpa)" class="px-3 py-1 rounded-full text-sm font-medium">
                         {{ student.gpa?.toFixed(2) || '0.00' }}
                       </span>
@@ -225,7 +231,7 @@
               </div>
               <div class="flex space-x-2">
                 <button @click="previousPage" :disabled="currentPage === 1"
-                  class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:cursor-pointer">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                   </svg>
@@ -234,7 +240,7 @@
                   Page {{ currentPage }} of {{ totalPages }}
                 </span>
                 <button @click="nextPage" :disabled="currentPage === totalPages"
-                  class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:cursor-pointer">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                   </svg>
