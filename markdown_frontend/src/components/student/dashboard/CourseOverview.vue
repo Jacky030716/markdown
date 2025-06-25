@@ -77,7 +77,7 @@ export default {
 }
 
 .course-code {
-  font-size: 0.9rem;
+  font-size: 1.0rem;
   color: #4f46e5;
   font-weight: 600;
   margin-bottom: 5px;
