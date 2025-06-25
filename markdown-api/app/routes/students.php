@@ -457,9 +457,6 @@ return function (RouteCollectorProxy $group) {
         }
     });
 
-
-
-
     // 3. For Remark Request Page
     //post remark request 
     $group->post('/{studentId}/courses/{courseId}/remark-requests', function (Request $request, Response $response, array $args) {
@@ -475,8 +472,9 @@ return function (RouteCollectorProxy $group) {
 
             // First, fetch the current mark for this student and component
             $markStmt = $pdo->prepare('
-            SELECT mark 
-            FROM student_marks 
+            SELECT * 
+            FROM student_marks AS sm
+            JOIN mark_components AS mc ON sm.component_id = mc.id
             WHERE student_id = :student_id AND component_id = :component_id
         ');
             $markStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
@@ -485,6 +483,7 @@ return function (RouteCollectorProxy $group) {
 
             $markResult = $markStmt->fetch(PDO::FETCH_ASSOC);
             $currentMark = $markResult ? $markResult['mark'] : null;
+            $componentName = $markResult ? $markResult['name'] : null;
 
             // Insert the remark request with the current mark
             $stmt = $pdo->prepare('
@@ -494,8 +493,8 @@ return function (RouteCollectorProxy $group) {
 
             $stmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
             $stmt->bindParam(':course_id', $courseId, PDO::PARAM_INT);
-            $stmt->bindParam(':component', $componentId, PDO::PARAM_INT);
-            $stmt->bindParam(':current_mark', $currentMark, PDO::PARAM_STR); // Use PDO::PARAM_STR for decimal values
+            $stmt->bindParam(':component', $componentName, PDO::PARAM_STR);
+            $stmt->bindParam(':current_mark', $currentMark, PDO::PARAM_STR);
             $stmt->bindParam(':justification', $justification, PDO::PARAM_STR);
             $stmt->execute();
 
