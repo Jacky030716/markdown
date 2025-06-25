@@ -48,7 +48,7 @@ export default {
     }
   },
 
-  
+
   /**
    * Fetch all courses for a student (currently hardcoded to student ID 4)
    * @param {number} studentId - The student ID (not used in current implementation)
@@ -307,6 +307,52 @@ export default {
       }
     }
   },
+
+  /** d)
+ * Fetch class ranking data for a student in a specific course
+ * @param {number} studentId - The student ID
+ * @param {number} courseId - The course ID
+ * @returns {Promise<Object>} Response object with ranking data
+ */
+async getRanking(studentId, courseId) {
+  try {
+    if (!studentId || !courseId) {
+      throw {
+        message: "Student ID and Course ID are required",
+        status: "validation_error",
+      };
+    }
+
+    const response = await apiClient.get(
+      `/students/${studentId}/courses/${courseId}/ranking`
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching ranking:", error);
+
+    if (error.response) {
+      throw {
+        message: error.response.data?.message || "Failed to fetch ranking",
+        status: error.response.status,
+        data: error.response.data,
+      };
+    } else if (error.request) {
+      throw {
+        message: "No response from server. Please check your connection.",
+        status: "network_error",
+      };
+    } else {
+      throw {
+        message: error.message || "An unexpected error occurred",
+        status: "unknown_error",
+      };
+    }
+  }
+},
+
+
+
 
   // 3. For Remark Request Page //
   //Fetch all the remark request of a student

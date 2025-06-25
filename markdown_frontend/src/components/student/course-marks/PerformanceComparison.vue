@@ -21,7 +21,6 @@
             <th v-for="component in componentsList" :key="component.id">
               {{ component.name }}
             </th>
-            <th>Total</th>
           </tr>
         </thead>
         <tbody>
@@ -37,9 +36,6 @@
             </td>
             <td v-for="component in componentsList" :key="component.id">
               {{ formatPercentage(getComponentScore(student, component.id)) }}
-            </td>
-            <td class="total-cell">
-              {{ formatPercentage(student.total_percentage) }}
             </td>
           </tr>
         </tbody>

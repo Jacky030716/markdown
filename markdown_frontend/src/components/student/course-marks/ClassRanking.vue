@@ -13,8 +13,19 @@
       <p class="error-message">{{ error }}</p>
     </div>
 
-    <div v-else-if="rankingData && rankingData.length > 0" class="chart-container">
-      <canvas ref="rankingChart"></canvas>
+    <div v-else-if="rankingData" class="ranking-content">
+      <!-- Student Position Card -->
+      <div class="ranking-card">
+        <h3>Your Position</h3>
+        <div class="rank">{{ rankingData.current_student.position_text }}</div>
+        <div class="percentile">{{ rankingData.current_student.percentile_text }}</div>
+        <div class="score">Total Score: {{ rankingData.current_student.total_score }}%</div>
+      </div>
+
+      <!-- Chart Container -->
+      <div class="chart-container">
+        <canvas ref="rankingChart"></canvas>
+      </div>
     </div>
 
     <div v-else class="no-data-container">
@@ -26,6 +37,7 @@
 <script>
 import { onMounted, onUnmounted, ref, watch, nextTick } from "vue";
 import { Chart, registerables } from "chart.js";
+import studentsApi from "../../../api/students"; // Adjust path as needed
 
 // Register all Chart.js components
 Chart.register(...registerables);
@@ -47,23 +59,20 @@ export default {
     const chartInstance = ref(null);
     const loading = ref(false);
     const error = ref(null);
-    const rankingData = ref([]);
+    const rankingData = ref(null);
 
-    // Function to render the chart
+    // Function to render the doughnut chart
     const renderChart = () => {
       console.log('Attempting to render ranking chart...');
       
-      if (!rankingChart.value) {
-        console.error("Canvas ref is not available for ranking chart");
+      if (!rankingChart.value || !rankingData.value) {
+        console.error("Canvas ref or ranking data not available");
         return;
       }
 
       const ctx = rankingChart.value.getContext("2d");
-      if (!ctx || !rankingData.value || rankingData.value.length === 0) {
-        console.error("Canvas context is not available or no ranking data.", {
-          ctx: !!ctx,
-          rankingData: rankingData.value
-        });
+      if (!ctx) {
+        console.error("Canvas context is not available");
         return;
       }
 
@@ -74,84 +83,67 @@ export default {
       }
 
       try {
-        // Create sample data for now (you can replace this with actual API call)
-        const sampleData = [
-          { student: "You", score: 94.8, isCurrentStudent: true },
-          { student: "Student A", score: 94.2, isCurrentStudent: false },
-          { student: "Student B", score: 92.5, isCurrentStudent: false },
-          { student: "Student C", score: 89.3, isCurrentStudent: false },
-          { student: "Student D", score: 85.1, isCurrentStudent: false },
+        const distribution = rankingData.value.class_distribution;
+        
+        // Prepare chart data
+        const chartLabels = ['Above You', 'Your Position', 'Below You'];
+        const chartData = [
+          distribution.above_percentage,
+          distribution.current_percentage,
+          distribution.below_percentage
         ];
 
-        const labels = sampleData.map(item => item.student);
-        const scores = sampleData.map(item => item.score);
-        const backgroundColors = sampleData.map(item => 
-          item.isCurrentStudent ? "rgba(34, 197, 94, 0.8)" : "rgba(156, 163, 175, 0.6)"
-        );
-        const borderColors = sampleData.map(item => 
-          item.isCurrentStudent ? "rgba(34, 197, 94, 1)" : "rgba(156, 163, 175, 1)"
-        );
+        console.log('Creating ranking chart with data:', { chartLabels, chartData });
 
-        console.log('Creating ranking chart with data:', { labels, scores });
-
-        // Create a new chart instance
+        // Create a new doughnut chart instance
         chartInstance.value = new Chart(ctx, {
-          type: "bar",
+          type: "doughnut",
           data: {
-            labels: labels,
-            datasets: [
-              {
-                label: "Total Score",
-                data: scores,
-                backgroundColor: backgroundColors,
-                borderColor: borderColors,
-                borderWidth: 2,
-                borderRadius: 8,
-              },
-            ],
+            labels: chartLabels,
+            datasets: [{
+              data: chartData,
+              backgroundColor: [
+                'rgba(239, 68, 68, 0.8)',   // Red for above
+                'rgba(34, 197, 94, 0.8)',   // Green for current student
+                'rgba(156, 163, 175, 0.8)'  // Gray for below
+              ],
+              borderColor: [
+                'rgba(239, 68, 68, 1)',
+                'rgba(34, 197, 94, 1)',
+                'rgba(156, 163, 175, 1)'
+              ],
+              borderWidth: 2
+            }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            indexAxis: 'y', // Horizontal bar chart
             plugins: {
               legend: {
-                display: false,
+                position: 'bottom',
+                labels: {
+                  padding: 20,
+                  usePointStyle: true,
+                  font: {
+                    size: 12
+                  }
+                }
               },
               tooltip: {
                 callbacks: {
-                  label: (context) => {
-                    return `Score: ${context.raw.toFixed(1)}%`;
-                  },
-                },
-              },
-            },
-            scales: {
-              x: {
-                beginAtZero: true,
-                max: 100,
-                ticks: {
-                  callback: function (value) {
-                    return value + "%";
-                  },
-                },
-              },
-              y: {
-                ticks: {
-                  color: function(context) {
-                    const item = sampleData[context.index];
-                    return item && item.isCurrentStudent ? "#22c55e" : "#6b7280";
-                  },
-                  font: function(context) {
-                    const item = sampleData[context.index];
-                    return {
-                      weight: item && item.isCurrentStudent ? "bold" : "normal"
-                    };
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.parsed;
+                    const count = label === 'Above You' ? distribution.students_above :
+                                 label === 'Your Position' ? 1 :
+                                 distribution.students_below;
+                    return `${label}: ${value}% (${count} student${count !== 1 ? 's' : ''})`;
                   }
-                },
-              },
+                }
+              }
             },
-          },
+            cutout: '60%', // Creates the doughnut hole
+          }
         });
 
         console.log('Ranking chart created successfully');
@@ -160,33 +152,40 @@ export default {
       }
     };
 
-    // Load ranking data (placeholder for now)
-    const loadRankingData = () => {
+    // Load ranking data from API
+    const loadRankingData = async () => {
+      if (!props.studentId || !props.courseId) {
+        return;
+      }
+
       loading.value = true;
       error.value = null;
+      rankingData.value = null;
 
-      // Simulate API call
-      setTimeout(() => {
-        try {
-          // This is sample data - replace with actual API call
-          rankingData.value = [
-            { student: "You", score: 94.8, isCurrentStudent: true },
-            { student: "Student A", score: 94.2, isCurrentStudent: false },
-            { student: "Student B", score: 92.5, isCurrentStudent: false },
-            { student: "Student C", score: 89.3, isCurrentStudent: false },
-            { student: "Student D", score: 85.1, isCurrentStudent: false },
-          ];
+      try {
+        console.log(`Fetching ranking for student ${props.studentId}, course ${props.courseId}`);
+        
+        const response = await studentsApi.getRanking(props.studentId, props.courseId);
+        
+        if (response.status === "success" && response.data) {
+          rankingData.value = response.data;
+          console.log("Ranking data loaded:", response.data);
           
+          // Wait for next tick to ensure DOM is updated, then render chart
           nextTick(() => {
             renderChart();
           });
-        } catch (err) {
-          error.value = "Failed to load ranking data";
-          console.error("Error loading ranking data:", err);
-        } finally {
-          loading.value = false;
+        } else {
+          console.warn("No ranking data found or unexpected response structure:", response);
+          error.value = response.message || "No ranking data available";
         }
-      }, 1000);
+      } catch (err) {
+        console.error("Error loading ranking data:", err);
+        error.value = err.message || "Failed to load ranking data";
+        rankingData.value = null;
+      } finally {
+        loading.value = false;
+      }
     };
 
     // Watch for prop changes
@@ -208,12 +207,10 @@ export default {
         courseId: props.courseId
       });
 
-      // Wait for next tick to ensure DOM is ready
-      nextTick(() => {
-        if (props.studentId && props.courseId) {
-          loadRankingData();
-        }
-      });
+      // Load data if props are available
+      if (props.studentId && props.courseId) {
+        loadRankingData();
+      }
     });
 
     // Cleanup on unmount
@@ -251,6 +248,7 @@ export default {
   border-bottom: 2px solid #e0e7ff;
 }
 
+
 .card-icon {
   width: 40px;
   height: 40px;
@@ -262,6 +260,14 @@ export default {
   color: white;
   font-weight: bold;
   margin-right: 15px;
+}
+
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
 }
 
 .card-title {
@@ -278,13 +284,56 @@ export default {
 .loading-container,
 .error-container,
 .no-data-container {
-  padding: 40px 20px;
+  padding: 2rem;
   text-align: center;
   color: #6b7280;
 }
 
 .error-message {
   color: #dc2626;
+  margin: 0;
+}
+
+.ranking-content {
+  padding: 1.5rem;
+}
+
+.ranking-card {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.ranking-card h3 {
+  margin: 0 0 1rem 0;
+  color: #374151;
+  font-size: 1rem;
   font-weight: 500;
+}
+
+.rank {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #22c55e;
+  margin-bottom: 0.5rem;
+}
+
+.percentile {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.score {
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
 }
 </style>

@@ -53,7 +53,7 @@
                 />
               </div>
 
-              <div class="grid grid-cols-1 lg:grid-cols-[3fr_7fr] gap-10">
+              <div class="grid grid-cols-1 lg:grid-cols-[4fr_6fr] gap-10">
                 <ClassRanking
                   :studentId="studentId"
                   :courseId="selectedCourse.id"
