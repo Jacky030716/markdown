@@ -4,19 +4,38 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Routing\RouteCollectorProxy;
 
-header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Access-Control-Allow-Credentials: true");
+// header("Access-Control-Allow-Origin: http://localhost:5173");
+// header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+// header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+// header("Access-Control-Allow-Credentials: true");
 
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(200);
-  exit();
-}
+// if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+//     http_response_code(200);
+//     exit();
+// }
 
 
 return function (RouteCollectorProxy $group) {
+
+  // Add CORS middleware to handle preflight requests
+  $group->options('/{routes:.+}', function (Request $request, Response $response) {
+    return $response
+      ->withHeader('Access-Control-Allow-Origin', 'http://localhost:5173')
+      ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+      ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+      ->withHeader('Access-Control-Allow-Credentials', 'true')
+      ->withStatus(200);
+  });
+
+  // Helper function to add CORS headers to any response
+  $addCorsHeaders = function (Response $response) {
+    return $response
+      ->withHeader('Access-Control-Allow-Origin', 'http://localhost:5173')
+      ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+      ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+      ->withHeader('Access-Control-Allow-Credentials', 'true');
+  };
+
   /**
    * Route: GET /api/v1/advisors/{advisors_id}/advisees
    * Description: Retrieves all advisees assigned to a specific advisor.
@@ -27,7 +46,7 @@ return function (RouteCollectorProxy $group) {
    * - 404 Not Found: JSON message if no active advisees are found for the advisor.
    * - 500 Internal Server Error: JSON message for database or unexpected errors.
    */
-  $group->get('/{advisors_id}/advisees', function (Request $request, Response $response, array $args) {
+  $group->get('/{advisors_id}/advisees', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
     $advisorsId = $args['advisors_id'];
 
     try {
@@ -42,7 +61,7 @@ return function (RouteCollectorProxy $group) {
       // Check if any advisees were found
       if (empty($advisees)) {
         $response->getBody()->write(json_encode(['message' => "No active advisees found for advisor ID: {$advisorsId}"]));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
       }
 
       $result = [];
@@ -178,15 +197,15 @@ return function (RouteCollectorProxy $group) {
       }
 
       $response->getBody()->write(json_encode(['data' => $result, 'status' => 'success']));
-      return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json'));
     } catch (PDOException $e) {
       error_log("Database error fetching advisees for advisor {$advisorsId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'Internal Server Error', 'error' => $e->getMessage()]));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     } catch (Exception $e) {
       error_log("Application error fetching advisees for advisor {$advisorsId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'An unexpected error occurred', 'error' => $e->getMessage()]));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     }
   });
 
@@ -201,7 +220,7 @@ return function (RouteCollectorProxy $group) {
    * - 404 Not Found: JSON message if no components are found for the course.
    * - 500 Internal Server Error: JSON message for database or unexpected errors.
    */
-  $group->get('/course/{course_id}', function (Request $request, Response $response, array $args) {
+  $group->get('/course/{course_id}', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
     $courseId = $args['course_id'];
 
     try {
@@ -216,7 +235,7 @@ return function (RouteCollectorProxy $group) {
 
       if (!$course) {
         $response->getBody()->write(json_encode(['message' => "Course with ID: {$courseId} not found or is inactive"]));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
       }
 
       // Fetch the mark components for the course
@@ -228,21 +247,21 @@ return function (RouteCollectorProxy $group) {
 
       if (empty($components)) {
         $response->getBody()->write(json_encode(['message' => "No components found for course ID: {$courseId}"]));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
       }
 
       $course['components'] = $components;
 
       $response->getBody()->write(json_encode($course));
-      return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json'));
     } catch (PDOException $e) {
       error_log("Database error fetching components for course {$courseId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'Internal Server Error']));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     } catch (Exception $e) {
       error_log("Application error fetching components for course {$courseId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'An unexpected error occurred']));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     }
   });
 
@@ -258,7 +277,7 @@ return function (RouteCollectorProxy $group) {
    * - 404 Not Found: JSON message if no students or marks are found for the course.
    * * - 500 Internal Server Error: JSON message for database or unexpected errors.
    */
-  $group->get('/{lecturer_id}/courses/{course_id}/students/marks', function (Request $request, Response $response, array $args) {
+  $group->get('/{lecturer_id}/courses/{course_id}/students/marks', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
     $lecturerId = $args['lecturer_id'];
     $courseId = $args['course_id'];
 
@@ -331,7 +350,7 @@ return function (RouteCollectorProxy $group) {
       // If no students are found (or no marks), return a 404.
       if (empty($rawStudentMarks)) {
         $response->getBody()->write(json_encode(['message' => "No enrolled students or marks found for Course ID: {$courseId}."]));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
       }
 
       $studentsData = [];
@@ -415,11 +434,11 @@ return function (RouteCollectorProxy $group) {
     } catch (PDOException $e) {
       error_log("DB Error fetching student marks for lecturer {$lecturerId} in course {$courseId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'Database error', 'error' => $e->getMessage()]));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     } catch (Exception $e) {
       error_log("General Error fetching student marks for lecturer {$lecturerId} in course {$courseId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'Unexpected error', 'error' => $e->getMessage()]));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     }
   });
 
@@ -436,7 +455,7 @@ return function (RouteCollectorProxy $group) {
    * - 404 Not Found: JSON message if the lecturer, course, or students/marks are not found.
    * - 500 Internal Server Error: JSON message for database or unexpected errors.
    */
-  $group->get('/{lecturer_id}/courses/{course_id}/students/analysis', function (Request $request, Response $response, array $args) {
+  $group->get('/{lecturer_id}/courses/{course_id}/students/analysis', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
     $lecturerId = $args['lecturer_id'];
     $courseId = $args['course_id'];
 
@@ -504,7 +523,7 @@ return function (RouteCollectorProxy $group) {
 
       if (empty($rawStudentMarks)) {
         $response->getBody()->write(json_encode(['data' => [], 'message' => "No enrolled students or marks found for Course ID: {$courseId}."]));
-        return $response->withStatus(200)->withHeader('Content-Type', 'application/json'); // Return 200 with empty data
+        return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json')); // Return 200 with empty data
       }
 
       $studentsData = [];
@@ -590,11 +609,11 @@ return function (RouteCollectorProxy $group) {
     } catch (PDOException $e) {
       error_log("DB Error fetching student marks for lecturer {$lecturerId} in course {$courseId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'Database error', 'error' => $e->getMessage()]));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     } catch (Exception $e) {
       error_log("General Error fetching student marks for lecturer {$lecturerId} in course {$courseId}: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'An unexpected error occurred', 'error' => $e->getMessage()]));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     }
   });
 
@@ -615,7 +634,7 @@ return function (RouteCollectorProxy $group) {
    * - 404 Not Found: JSON message if the student, course, or component is not found.
    * - 500 Internal Server Error: JSON message for database or unexpected errors.
    */
-  $group->patch('/{lecturer_id}/courses/{course_id}/students/{student_id}/marks/{component_id}', function (Request $request, Response $response, array $args) {
+  $group->patch('/{lecturer_id}/courses/{course_id}/students/{student_id}/marks/{component_id}', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
     $lecturerId = $args['lecturer_id'];
     $courseId = $args['course_id'];
     $studentId = $args['student_id'];
@@ -646,7 +665,7 @@ return function (RouteCollectorProxy $group) {
       $verifyStudentEnrollmentStmt->execute();
       if (!$verifyStudentEnrollmentStmt->fetchColumn()) {
         $response->getBody()->write(json_encode(['message' => "Not Found: Student ID {$studentId} is not enrolled in Course ID {$courseId}."]));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
       }
 
       // 3. Verify that the component belongs to this course and get its max_mark.
@@ -658,7 +677,7 @@ return function (RouteCollectorProxy $group) {
 
       if (!$componentInfo) {
         $response->getBody()->write(json_encode(['message' => "Not Found: Component ID {$componentId} not found or does not belong to Course ID {$courseId}."]));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
       }
       $maxMark = (float)$componentInfo['max_mark'];
 
@@ -710,15 +729,336 @@ return function (RouteCollectorProxy $group) {
         'component_id' => (int)$componentId,
         'new_mark' => $newMark
       ]));
-      return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json'));
     } catch (PDOException $e) {
       error_log("Database error updating mark: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'Database error', 'error' => $e->getMessage()]));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     } catch (Exception $e) {
       error_log("General error updating mark: " . $e->getMessage());
       $response->getBody()->write(json_encode(['message' => 'Unexpected error', 'error' => $e->getMessage()]));
-      return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
+    }
+  });
+
+  /**
+   * Route: GET /api/v1/advisors/{advisors_id}/meeting-notes
+   * Description: Get all meeting notes for a specific advisor with student information
+   */
+  $group->get('/{advisors_id}/meeting-notes', function (Request $request, Response $response, array $args) use ($addCorsHeaders) {
+    $advisorsId = $args['advisors_id'];
+
+    try {
+      $pdo = $this->get('db');
+
+      $stmt = $pdo->prepare('
+        SELECT 
+          mn.id,
+          mn.meeting_date,
+          mn.meeting_duration,
+          mn.meeting_type,
+          mn.meeting_location,
+          mn.meeting_summary,
+          mn.meeting_special_notes,
+          mn.created_at,
+          mn.updated_at,
+          s.id as student_id,
+          s.name as student_name,
+          s.matric_no,
+          s.program,
+          s.year_of_study
+        FROM meeting_notes mn
+        JOIN students s ON mn.student_id = s.id
+        WHERE mn.advisor_id = :advisor_id
+        ORDER BY mn.meeting_date DESC
+      ');
+
+      $stmt->bindParam(':advisor_id', $advisorsId, PDO::PARAM_INT);
+      $stmt->execute();
+      $meetingNotes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+      $result = [];
+      foreach ($meetingNotes as $note) {
+        // Truncate special notes for display
+        $truncatedNotes = strlen($note['meeting_special_notes']) > 100
+          ? substr($note['meeting_special_notes'], 0, 100) . '...'
+          : $note['meeting_special_notes'];
+
+        $result[] = [
+          'id' => (int)$note['id'],
+          'student_info' => [
+            'id' => (int)$note['student_id'],
+            'name' => $note['student_name'],
+            'matric_no' => $note['matric_no']
+          ],
+          'student_program' => $note['program'],
+          'student_year' => (int)$note['year_of_study'],
+          'last_meeting_date' => $note['meeting_date'],
+          'last_meeting_type' => $note['meeting_type'],
+          'last_meeting_notes_truncated' => $truncatedNotes,
+          'meeting_duration' => (int)$note['meeting_duration'],
+          'meeting_location' => $note['meeting_location'],
+          'meeting_summary' => $note['meeting_summary'],
+          'meeting_special_notes' => $note['meeting_special_notes'],
+          'created_at' => $note['created_at'],
+          'updated_at' => $note['updated_at']
+        ];
+      }
+
+      $response->getBody()->write(json_encode(['data' => $result, 'status' => 'success']));
+      return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json'));
+    } catch (Exception $e) {
+      error_log("Error fetching meeting notes: " . $e->getMessage());
+      $response->getBody()->write(json_encode(['message' => 'Failed to fetch meeting notes', 'error' => $e->getMessage()]));
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
+    }
+  });
+
+  /**
+   * Route: GET /api/v1/advisors/{advisors_id}/advisees-dropdown
+   * Description: Get simplified advisees list for dropdown selection
+   */
+  $group->get('/{advisors_id}/advisees-dropdown', function (Request $request, Response $response, array $args) use ($addCorsHeaders) {
+    $advisorsId = $args['advisors_id'];
+
+    try {
+      $pdo = $this->get('db');
+
+      $stmt = $pdo->prepare('SELECT id, name, matric_no FROM students WHERE advisor_id = :advisor_id ORDER BY name ASC');
+      $stmt->bindParam(':advisor_id', $advisorsId, PDO::PARAM_INT);
+      $stmt->execute();
+      $advisees = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+      $result = [];
+      foreach ($advisees as $advisee) {
+        $result[] = [
+          'id' => (int)$advisee['id'],
+          'name' => $advisee['name'],
+          'matric_no' => $advisee['matric_no'],
+          'display_name' => $advisee['name'] . ' (' . $advisee['matric_no'] . ')'
+        ];
+      }
+
+      $response->getBody()->write(json_encode(['data' => $result, 'status' => 'success']));
+      return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json'));
+    } catch (Exception $e) {
+      error_log("Error fetching advisees dropdown: " . $e->getMessage());
+      $response->getBody()->write(json_encode(['message' => 'Failed to fetch advisees', 'error' => $e->getMessage()]));
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
+    }
+  });
+
+  /**
+   * Route: POST /api/v1/advisors/{advisors_id}/meeting-notes
+   * Description: Create a new meeting note
+   */
+  $group->post('/{advisors_id}/meeting-notes', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
+    $advisorsId = $args['advisors_id'];
+    $data = json_decode($request->getBody()->getContents(), true);
+
+    try {
+      $pdo = $this->get('db');
+
+      $stmt = $pdo->prepare('
+        INSERT INTO meeting_notes 
+        (advisor_id, student_id, meeting_date, meeting_duration, meeting_type, meeting_location, meeting_summary, meeting_special_notes)
+        VALUES (:advisor_id, :student_id, :meeting_date, :meeting_duration, :meeting_type, :meeting_location, :meeting_summary, :meeting_special_notes)
+      ');
+
+      $stmt->bindParam(':advisor_id', $advisorsId, PDO::PARAM_INT);
+      $stmt->bindParam(':student_id', $data['student_id'], PDO::PARAM_INT);
+      $stmt->bindParam(':meeting_date', $data['meeting_date'], PDO::PARAM_STR);
+      $stmt->bindParam(':meeting_duration', $data['meeting_duration'], PDO::PARAM_INT);
+      $stmt->bindParam(':meeting_type', $data['meeting_type'], PDO::PARAM_STR);
+      $stmt->bindParam(':meeting_location', $data['meeting_location'], PDO::PARAM_STR);
+      $stmt->bindParam(':meeting_summary', $data['meeting_summary'], PDO::PARAM_STR);
+      $stmt->bindParam(':meeting_special_notes', $data['meeting_special_notes'], PDO::PARAM_STR);
+
+      $stmt->execute();
+      $meetingNoteId = $pdo->lastInsertId();
+
+      $response->getBody()->write(json_encode([
+        'message' => 'Meeting note created successfully',
+        'id' => (int)$meetingNoteId,
+        'status' => 'success'
+      ]));
+      return $addCorsHeaders($response->withStatus(201)->withHeader('Content-Type', 'application/json'));
+    } catch (Exception $e) {
+      error_log("Error creating meeting note: " . $e->getMessage());
+      $response->getBody()->write(json_encode(['message' => 'Failed to create meeting note', 'error' => $e->getMessage()]));
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
+    }
+  });
+
+  /**
+   * Route: PUT /api/v1/advisors/{advisors_id}/meeting-notes/{meeting_note_id}
+   * Description: Update an existing meeting note
+   */
+  $group->put('/{advisors_id}/meeting-notes/{meeting_note_id}', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
+    $advisorsId = $args['advisors_id'];
+    $meetingNoteId = $args['meeting_note_id'];
+    $data = json_decode($request->getBody()->getContents(), true);
+
+    try {
+      $pdo = $this->get('db');
+
+      $stmt = $pdo->prepare('
+        UPDATE meeting_notes 
+        SET student_id = :student_id, 
+            meeting_date = :meeting_date, 
+            meeting_duration = :meeting_duration, 
+            meeting_type = :meeting_type, 
+            meeting_location = :meeting_location, 
+            meeting_summary = :meeting_summary, 
+            meeting_special_notes = :meeting_special_notes
+        WHERE id = :meeting_note_id AND advisor_id = :advisor_id
+      ');
+
+      $stmt->bindParam(':advisor_id', $advisorsId, PDO::PARAM_INT);
+      $stmt->bindParam(':meeting_note_id', $meetingNoteId, PDO::PARAM_INT);
+      $stmt->bindParam(':student_id', $data['student_id'], PDO::PARAM_INT);
+      $stmt->bindParam(':meeting_date', $data['meeting_date'], PDO::PARAM_STR);
+      $stmt->bindParam(':meeting_duration', $data['meeting_duration'], PDO::PARAM_INT);
+      $stmt->bindParam(':meeting_type', $data['meeting_type'], PDO::PARAM_STR);
+      $stmt->bindParam(':meeting_location', $data['meeting_location'], PDO::PARAM_STR);
+      $stmt->bindParam(':meeting_summary', $data['meeting_summary'], PDO::PARAM_STR);
+      $stmt->bindParam(':meeting_special_notes', $data['meeting_special_notes'], PDO::PARAM_STR);
+
+      $stmt->execute();
+
+      if ($stmt->rowCount() === 0) {
+        $response->getBody()->write(json_encode(['message' => 'Meeting note not found or no changes made']));
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
+      }
+
+      $response->getBody()->write(json_encode([
+        'message' => 'Meeting note updated successfully',
+        'status' => 'success'
+      ]));
+      return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json'));
+    } catch (Exception $e) {
+      error_log("Error updating meeting note: " . $e->getMessage());
+      $response->getBody()->write(json_encode(['message' => 'Failed to update meeting note', 'error' => $e->getMessage()]));
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
+    }
+  });
+
+  /**
+   * Route: DELETE /api/v1/advisors/{advisors_id}/meeting-notes/{meeting_note_id}
+   * Description: Delete a meeting note
+   */
+  $group->delete('/{advisors_id}/meeting-notes/{meeting_note_id}', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
+    $advisorsId = $args['advisors_id'];
+    $meetingNoteId = $args['meeting_note_id'];
+
+    try {
+      $pdo = $this->get('db');
+
+      $stmt = $pdo->prepare('DELETE FROM meeting_notes WHERE id = :meeting_note_id AND advisor_id = :advisor_id');
+      $stmt->bindParam(':advisor_id', $advisorsId, PDO::PARAM_INT);
+      $stmt->bindParam(':meeting_note_id', $meetingNoteId, PDO::PARAM_INT);
+      $stmt->execute();
+
+      if ($stmt->rowCount() === 0) {
+        $response->getBody()->write(json_encode(['message' => 'Meeting note not found']));
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
+      }
+
+      $response->getBody()->write(json_encode([
+        'message' => 'Meeting note deleted successfully',
+        'status' => 'success'
+      ]));
+      return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json'));
+    } catch (Exception $e) {
+      error_log("Error deleting meeting note: " . $e->getMessage());
+      $response->getBody()->write(json_encode(['message' => 'Failed to delete meeting note', 'error' => $e->getMessage()]));
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
+    }
+  });
+
+  /**
+   * Route: GET /api/v1/advisors/{advisors_id}/students/{student_id}/consultation-report
+   * Description: Generate consultation report for a specific student
+   */
+  $group->get('/{advisors_id}/students/{student_id}/consultation-report', function (Request $request, Response $response, array $args)use ($addCorsHeaders) {
+    $advisorsId = $args['advisors_id'];
+    $studentId = $args['student_id'];
+
+    try {
+      $pdo = $this->get('db');
+
+      // Get student information
+      $studentStmt = $pdo->prepare('SELECT * FROM students WHERE id = :student_id AND advisor_id = :advisor_id');
+      $studentStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+      $studentStmt->bindParam(':advisor_id', $advisorsId, PDO::PARAM_INT);
+      $studentStmt->execute();
+      $student = $studentStmt->fetch(PDO::FETCH_ASSOC);
+
+      if (!$student) {
+        $response->getBody()->write(json_encode(['message' => 'Student not found or not under this advisor']));
+        return $addCorsHeaders($response->withStatus(404)->withHeader('Content-Type', 'application/json'));
+      }
+
+      // Get all meeting notes for this student
+      $meetingStmt = $pdo->prepare('
+        SELECT * FROM meeting_notes 
+        WHERE advisor_id = :advisor_id AND student_id = :student_id 
+        ORDER BY meeting_date DESC
+      ');
+      $meetingStmt->bindParam(':advisor_id', $advisorsId, PDO::PARAM_INT);
+      $meetingStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+      $meetingStmt->execute();
+      $meetings = $meetingStmt->fetchAll(PDO::FETCH_ASSOC);
+
+      // Get student's academic performance (reuse existing logic)
+      $coursesStmt = $pdo->prepare('
+        SELECT 
+          c.course_code,
+          c.course_name,
+          c.credit_hours
+        FROM enrollments e
+        JOIN courses c ON e.course_id = c.id
+        WHERE e.student_id = :student_id AND e.status = "enrolled"
+      ');
+      $coursesStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+      $coursesStmt->execute();
+      $courses = $coursesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+      $result = [
+        'student_info' => [
+          'id' => (int)$student['id'],
+          'name' => $student['name'],
+          'matric_no' => $student['matric_no'],
+          'program' => $student['program'],
+          'year_of_study' => (int)$student['year_of_study']
+        ],
+        'enrolled_courses' => $courses,
+        'total_meetings' => count($meetings),
+        'meetings_summary' => [
+          'physical' => count(array_filter($meetings, fn($m) => $m['meeting_type'] === 'Physical')),
+          'video_call' => count(array_filter($meetings, fn($m) => $m['meeting_type'] === 'Video Call')),
+          'phone_call' => count(array_filter($meetings, fn($m) => $m['meeting_type'] === 'Phone Call'))
+        ],
+        'meetings' => array_map(function ($meeting) {
+          return [
+            'id' => (int)$meeting['id'],
+            'meeting_date' => $meeting['meeting_date'],
+            'meeting_duration' => (int)$meeting['meeting_duration'],
+            'meeting_type' => $meeting['meeting_type'],
+            'meeting_location' => $meeting['meeting_location'],
+            'meeting_summary' => $meeting['meeting_summary'],
+            'meeting_special_notes' => $meeting['meeting_special_notes']
+          ];
+        }, $meetings),
+        'generated_at' => date('Y-m-d H:i:s')
+      ];
+
+      $response->getBody()->write(json_encode(['data' => $result, 'status' => 'success']));
+      return $addCorsHeaders($response->withStatus(200)->withHeader('Content-Type', 'application/json'));
+    } catch (Exception $e) {
+      error_log("Error generating consultation report: " . $e->getMessage());
+      $response->getBody()->write(json_encode(['message' => 'Failed to generate consultation report', 'error' => $e->getMessage()]));
+      return $addCorsHeaders($response->withStatus(500)->withHeader('Content-Type', 'application/json'));
     }
   });
 };

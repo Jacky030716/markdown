@@ -136,6 +136,102 @@ const advisorsApi = {
       console.error('Error searching advisees:', error)
       throw new Error(error.response?.data?.message || 'Failed to search advisees')
     }
+  },
+
+  
+  /**
+   * Get all meeting notes for a specific advisor
+   * @param {number} advisorId - The ID of the advisor
+   * @returns {Promise} - Promise containing meeting notes data with student info
+   */
+  async getMeetingNotes(advisorId) {
+    try {
+      const response = await api.get(`/advisors/${advisorId}/meeting-notes`)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching meeting notes:', error)
+      throw new Error(error.response?.data?.message || 'Failed to fetch meeting notes')
+    }
+  },
+
+  /**
+   * Get advisees list for dropdown selection
+   * @param {number} advisorId - The ID of the advisor
+   * @returns {Promise} - Promise containing simplified advisees data for dropdown
+   */
+  async getAdviseesForDropdown(advisorId) {
+    try {
+      const response = await api.get(`/advisors/${advisorId}/advisees-dropdown`)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching advisees for dropdown:', error)
+      throw new Error(error.response?.data?.message || 'Failed to fetch advisees list')
+    }
+  },
+
+  /**
+   * Create a new meeting note
+   * @param {number} advisorId - The ID of the advisor
+   * @param {Object} meetingData - Meeting note data object
+   * @returns {Promise} - Promise containing created meeting note
+   */
+  async createMeetingNote(advisorId, meetingData) {
+    try {
+      const response = await api.post(`/advisors/${advisorId}/meeting-notes`, meetingData)
+      return response.data
+    } catch (error) {
+      console.error('Error creating meeting note:', error)
+      throw new Error(error.response?.data?.message || 'Failed to create meeting note')
+    }
+  },
+
+  /**
+   * Update an existing meeting note
+   * @param {number} advisorId - The ID of the advisor
+   * @param {number} meetingNoteId - The ID of the meeting note
+   * @param {Object} meetingData - Updated meeting note data
+   * @returns {Promise} - Promise containing updated meeting note
+   */
+  async updateMeetingNote(advisorId, meetingNoteId, meetingData) {
+    try {
+      const response = await api.put(`/advisors/${advisorId}/meeting-notes/${meetingNoteId}`, meetingData)
+      return response.data
+    } catch (error) {
+      console.error('Error updating meeting note:', error)
+      throw new Error(error.response?.data?.message || 'Failed to update meeting note')
+    }
+  },
+
+  /**
+   * Delete a meeting note
+   * @param {number} advisorId - The ID of the advisor
+   * @param {number} meetingNoteId - The ID of the meeting note
+   * @returns {Promise} - Promise containing deletion confirmation
+   */
+  async deleteMeetingNote(advisorId, meetingNoteId) {
+    try {
+      const response = await api.delete(`/advisors/${advisorId}/meeting-notes/${meetingNoteId}`)
+      return response.data
+    } catch (error) {
+      console.error('Error deleting meeting note:', error)
+      throw new Error(error.response?.data?.message || 'Failed to delete meeting note')
+    }
+  },
+
+  /**
+   * Generate consultation report for a specific student
+   * @param {number} advisorId - The ID of the advisor
+   * @param {number} studentId - The ID of the student
+   * @returns {Promise} - Promise containing report data
+   */
+  async generateConsultationReport(advisorId, studentId) {
+    try {
+      const response = await api.get(`/advisors/${advisorId}/students/${studentId}/consultation-report`)
+      return response.data
+    } catch (error) {
+      console.error('Error generating consultation report:', error)
+      throw new Error(error.response?.data?.message || 'Failed to generate consultation report')
+    }
   }
 }
 
