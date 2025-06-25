@@ -21,6 +21,7 @@
             <th v-for="component in componentsList" :key="component.id">
               {{ component.name }}
             </th>
+            <th> Weight Percentage </th>
           </tr>
         </thead>
         <tbody>
@@ -37,6 +38,7 @@
             <td v-for="component in componentsList" :key="component.id">
               {{ formatPercentage(getComponentScore(student, component.id)) }}
             </td>
+            <td>{{ student.total_percentage }}</td>
           </tr>
         </tbody>
       </table>
@@ -60,7 +62,7 @@ export default {
     },
     loading: {
       type: Boolean,
-      default: false,
+    default: false,
     },
     error: {
       type: String,
@@ -108,7 +110,7 @@ export default {
       });
 
       if (totalWeight > 0) {
-        classAverageRow.total_percentage = totalWeightedSum / totalWeight;
+        classAverageRow.total_percentage = (totalWeightedSum / totalWeight).toFixed(2);
       }
 
       return [...students, classAverageRow];

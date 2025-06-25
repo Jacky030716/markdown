@@ -31,7 +31,7 @@ export default {
   },
   data() {
     return {
-      studentId: 4, // Mock student ID, replace this when login feature is implemented
+      studentId: localStorage.getItem('student_id'), // Mock student ID, replace this when login feature is implemented
       student: {}, // Empty object to be populated with student details
       stats: [], // Initially empty, will be populated with progress summary stats
       courses: [], // Courses data will be populated here

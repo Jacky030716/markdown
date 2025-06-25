@@ -89,7 +89,8 @@ export default {
       isExpanded,
       toggleSidebar,
       menuItems,
-      student
+      student,
+      handleLogout
     }
   },
 }
