@@ -122,7 +122,7 @@ return function (RouteCollectorProxy $group) {
     });
 
     /**
-     * Route: GET /api/v1/lecturers/{lecturer_id}/courses/${course_id}
+     * Route: GET /api/v1/lecturers/course/${course_id}
      * Description: Retrieves the marks components for a specific course assigned to a lecturer.
      * Parameters:
      * - lecturer_id (int): The unique identifier of the lecturer.
@@ -158,9 +158,10 @@ return function (RouteCollectorProxy $group) {
           $components = $stmt->fetchAll(PDO::FETCH_ASSOC);
   
           if (empty($components)) {
-              $response->getBody()->write(json_encode(['message' => "No components found for course ID: {$courseId}"]));
-              return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
-          }
+            $course['components'] = [];
+            $response->getBody()->write(json_encode($course));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        }
   
           $course['components'] = $components;
   

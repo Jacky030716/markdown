@@ -317,6 +317,7 @@ export default {
         type: 'final',
         max_mark: 100,
         weight: this.defaultFinalExamWeight,
+        course_id: this.selectedCourse.id
       };
 
       try {
