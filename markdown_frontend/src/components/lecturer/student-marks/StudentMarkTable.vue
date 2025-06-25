@@ -8,10 +8,10 @@
           <input :value="searchQuery" @input="$emit('update-search', $event.target.value)" type="text"
             placeholder="Search students..."
             class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
-          <button @click="$emit('add-student')"
+          <!-- <button @click="$emit('add-student')"
             class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-md text-sm font-medium cursor-pointer">
             Add Student
-          </button>
+          </button> -->
           <!-- Save All button is commented out as per your previous code, uncomment if needed -->
           <!-- <button @click="$emit('save-all-marks')"
             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium">

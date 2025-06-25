@@ -54,6 +54,7 @@ return function (RouteCollectorProxy $group) {
         $coursesStmt = $pdo->prepare(
           'SELECT 
                     c.id AS course_id,
+                    c.course_code,
                     c.course_name,
                     c.credit_hours,
                     e.status
@@ -147,6 +148,7 @@ return function (RouteCollectorProxy $group) {
 
           // Add course to enrolled courses array
           $coursesEnrolled[] = [
+            'course_code' => $course['course_code'],
             'course_name' => $course['course_name'],
             'credits' => $creditHours,
             'totalMark' => $totalMark,
