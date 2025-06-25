@@ -37,7 +37,18 @@ apiClient.interceptors.response.use(
 );
 
 export default {
-  // General
+  // General Use
+  async getStudentProfile(studentId) {
+    try {
+      const response = await apiClient.get(`/students/${studentId}/profile`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching student profile:", error);
+      throw error;
+    }
+  },
+
+
   /**
    * Fetch all courses for a student (currently hardcoded to student ID 4)
    * @param {number} studentId - The student ID (not used in current implementation)
@@ -79,12 +90,12 @@ export default {
 
   // 1. For Dashboard Page //
   /**
- * Fetch detailed information for a student
- * @param {number} studentId - The student ID
- * @returns {Promise<Object>} Response object with student details
- */
+   * Fetch detailed information for a student
+   * @param {number} studentId - The student ID
+   * @returns {Promise<Object>} Response object with student details
+   */
 
-  async getStudentDetails (studentId) {
+  async getStudentDetails(studentId) {
     try {
       if (!studentId) {
         throw {
@@ -92,18 +103,19 @@ export default {
           status: "validation_error",
         };
       }
-  
+
       // Perform the GET request to the backend API
       const response = await apiClient.get(`/students/${studentId}/info`);
-  
+
       return response.data;
     } catch (error) {
       console.error("Error fetching student details:", error);
-  
+
       // Handle the different types of errors based on the response
       if (error.response) {
         throw {
-          message: error.response.data?.message || "Failed to fetch student details",
+          message:
+            error.response.data?.message || "Failed to fetch student details",
           status: error.response.status,
           data: error.response.data,
         };
@@ -120,7 +132,7 @@ export default {
       }
     }
   },
-  
+
   /**
    * Fetch overall progress summary for a student
    * @param {number} studentId - The student ID
@@ -165,7 +177,7 @@ export default {
   },
 
   // 2. For Course Mark Page //
-  /**
+  /** a)
    * Fetch marks for a specific student and course
    * @param {number} studentId - The student ID
    * @param {number} courseId - The course ID
@@ -209,7 +221,7 @@ export default {
     }
   },
 
-  /**
+  /** b)
    * Fetch detailed information about a course for a specific student
    * @param {number} studentId - The student ID
    * @param {number} courseId - The course ID
@@ -253,6 +265,95 @@ export default {
     }
   },
 
+  /** c)
+   * Fetch performance analytics for a student in a specific course
+   * @param {number} studentId - The student ID
+   * @param {number} courseId - The course ID
+   * @returns {Promise<Object>} Response object with analytics data
+   */
+  async getAnalytics(studentId, courseId) {
+    try {
+      if (!studentId || !courseId) {
+        throw {
+          message: "Student ID and Course ID are required",
+          status: "validation_error",
+        };
+      }
+
+      const response = await apiClient.get(
+        `/students/${studentId}/courses/${courseId}/analytics`
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+
+      if (error.response) {
+        throw {
+          message: error.response.data?.message || "Failed to fetch analytics",
+          status: error.response.status,
+          data: error.response.data,
+        };
+      } else if (error.request) {
+        throw {
+          message: "No response from server. Please check your connection.",
+          status: "network_error",
+        };
+      } else {
+        throw {
+          message: error.message || "An unexpected error occurred",
+          status: "unknown_error",
+        };
+      }
+    }
+  },
+
+  /** d)
+ * Fetch class ranking data for a student in a specific course
+ * @param {number} studentId - The student ID
+ * @param {number} courseId - The course ID
+ * @returns {Promise<Object>} Response object with ranking data
+ */
+async getRanking(studentId, courseId) {
+  try {
+    if (!studentId || !courseId) {
+      throw {
+        message: "Student ID and Course ID are required",
+        status: "validation_error",
+      };
+    }
+
+    const response = await apiClient.get(
+      `/students/${studentId}/courses/${courseId}/ranking`
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching ranking:", error);
+
+    if (error.response) {
+      throw {
+        message: error.response.data?.message || "Failed to fetch ranking",
+        status: error.response.status,
+        data: error.response.data,
+      };
+    } else if (error.request) {
+      throw {
+        message: "No response from server. Please check your connection.",
+        status: "network_error",
+      };
+    } else {
+      throw {
+        message: error.message || "An unexpected error occurred",
+        status: "unknown_error",
+      };
+    }
+  }
+},
+
+
+
+
   // 3. For Remark Request Page //
   //Fetch all the remark request of a student
   async getRemarkRequests(studentId) {
@@ -285,7 +386,9 @@ export default {
   async getCoursesWithComponents(studentId) {
     try {
       // Call the new endpoint that includes components
-      const response = await apiClient.get(`/students/${studentId}/courses-with-components`);
+      const response = await apiClient.get(
+        `/students/${studentId}/courses-with-components`
+      );
 
       // Handle the API response structure
       if (response.data && response.data.status === "success") {
