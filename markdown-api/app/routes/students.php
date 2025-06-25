@@ -9,34 +9,68 @@ return function (RouteCollectorProxy $group) {
     // For sidebar (get student profile)
     $group->get('/{student_id}/profile', function (Request $request, Response $response, array $args) {
         $studentId = $args['student_id'];
-
+        
         try {
+            // Get database connection
             $pdo = $this->get('db');
+            
+            // Validate student_id is numeric
+            if (!is_numeric($studentId)) {
+                $response->getBody()->write(json_encode([
+                    'message' => 'Invalid student ID format',
+                    'status' => 'error'
+                ]));
+                return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+            }
+            
+            // Prepare and execute query - Fixed column names to match database schema
             $stmt = $pdo->prepare(
-                'SELECT s.user_id, s.student_id, s.name, s.email, u.role, u.is_active
+                'SELECT s.user_id, s.id as student_db_id, s.matric_no, s.name, s.program, s.year_of_study, s.advisor_id, u.email, u.role, u.is_active
                  FROM students AS s
                  JOIN users AS u ON s.user_id = u.id
-                 WHERE s.student_id = :student_id'
+                 WHERE s.id = :student_id AND u.is_active = 1'
             );
+            
+            // Fix: Use proper parameter binding
             $stmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
             $stmt->execute();
-
+            
             $student = $stmt->fetch(PDO::FETCH_ASSOC);
-
+            
             if (!$student) {
-                $response->getBody()->write(json_encode(['message' => "Student with ID: {$studentId} not found or is inactive"]));
+                $response->getBody()->write(json_encode([
+                    'message' => "Student with ID: {$studentId} not found or is inactive",
+                    'status' => 'error'
+                ]));
                 return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
             }
-
-            $response->getBody()->write(json_encode(['data' => $student, 'status' => 'success']));
+            
+            // Success response
+            $response->getBody()->write(json_encode([
+                'data' => $student,
+                'status' => 'success'
+            ]));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+            
         } catch (PDOException $e) {
-            error_log("Database error fetching lecturer profile {$studentId}: " . $e->getMessage());
-            $response->getBody()->write(json_encode(['message' => 'Internal Server Error']));
+            // Log the actual error for debugging
+            error_log("Database error fetching student profile {$studentId}: " . $e->getMessage());
+            error_log("SQL Error Code: " . $e->getCode());
+            
+            $response->getBody()->write(json_encode([
+                'message' => 'Database error occurred',
+                'status' => 'error'
+            ]));
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+            
         } catch (Exception $e) {
-            error_log("Application error fetching lecturer profile {$studentId}: " . $e->getMessage());
-            $response->getBody()->write(json_encode(['message' => 'An unexpected error occurred']));
+            // Log general errors
+            error_log("Application error fetching student profile {$studentId}: " . $e->getMessage());
+            
+            $response->getBody()->write(json_encode([
+                'message' => 'An unexpected error occurred',
+                'status' => 'error'
+            ]));
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
         }
     });

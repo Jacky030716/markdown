@@ -1,4 +1,3 @@
-
 <template>
   <div class="card">
     <div class="card-header">
@@ -23,7 +22,7 @@
       <p>You have received marks for all components in this course. There are no remaining components to simulate.</p>
       <div class="final-grade">
         <span class="label">Your Final Grade:</span>
-        <span class="grade">{{ currentTotalGrade.toFixed(2) }}%</span>
+        <span class="grade">{{ currentTotalGrade.toFixed(2) }}% (Grade {{ calculateGrade(currentTotalGrade) }})</span>
       </div>
     </div>
 
@@ -83,7 +82,7 @@
 
       <div class="simulator-result">
         <h3>Projected Final Grade</h3>
-        <div class="projected-grade">{{ projectedGrade.toFixed(2) }}%</div>
+        <div class="projected-grade">{{ projectedGrade.toFixed(2) }}% (Grade {{ calculateGrade(projectedGrade) }})</div>
         <div class="grade-breakdown">
           <div class="breakdown-item">
             <span>Current Weighted Score :</span>
@@ -95,7 +94,7 @@
           </div>
           <div class="breakdown-item total">
             <span>Total Projected Score :</span>
-            <span>{{ projectedGrade.toFixed(2) }}%</span>
+            <span>{{ projectedGrade.toFixed(2) }}% ({{ calculateGrade(projectedGrade) }})</span>
           </div>
         </div>
       </div>
@@ -197,6 +196,23 @@ export default {
       return maxMarkNum > 0 ? ((score / maxMarkNum) * 100).toFixed(1) : '0.0';
     };
 
+    // Grade calculation function
+    const calculateGrade = (mark) => {
+      if (mark >= 90) return 'A+';
+      if (mark >= 80) return 'A';
+      if (mark >= 75) return 'A-';
+      if (mark >= 70) return 'B+';
+      if (mark >= 65) return 'B';
+      if (mark >= 60) return 'B-';
+      if (mark >= 55) return 'C+';
+      if (mark >= 50) return 'C';
+      if (mark >= 45) return 'C-';
+      if (mark >= 40) return 'D+';
+      if (mark >= 35) return 'D';
+      if (mark >= 30) return 'D-';
+      return 'E';
+    };
+
     const initializeSimulatedScores = () => {
       const newScores = {};
       ungradedComponents.value.forEach(component => {
@@ -228,6 +244,7 @@ export default {
       projectedGrade,
       updateScore,
       getPercentage,
+      calculateGrade,
       initializeSimulatedScores
     };
   }
@@ -438,6 +455,7 @@ export default {
   color: #0c4a6e;
   margin-bottom: 16px;
   text-align: center;
+  font-weight: 600;
 }
 
 .projected-grade {

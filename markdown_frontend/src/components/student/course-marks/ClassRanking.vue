@@ -294,10 +294,6 @@ export default {
   margin: 0;
 }
 
-.ranking-content {
-  padding: 1.5rem;
-}
-
 .ranking-card {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   border-radius: 1rem;

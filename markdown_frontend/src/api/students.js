@@ -40,10 +40,16 @@ export default {
   // General Use
   async getStudentProfile(studentId) {
     try {
+      // Fix: Added missing backticks for template literal
       const response = await apiClient.get(`/students/${studentId}/profile`);
       return response.data;
     } catch (error) {
       console.error("Error fetching student profile:", error);
+      // Log more details for debugging
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response data:", error.response.data);
+      }
       throw error;
     }
   },

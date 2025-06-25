@@ -1,5 +1,5 @@
 <script>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import {
   Home,
   Clipboard,
@@ -8,9 +8,11 @@ import {
   User,
   ChartColumn,
   ClipboardPenLine,
-  ChartPie
+  ChartPie,
+  LogOutIcon
 } from "lucide-vue-next"
 import { RouterLink } from 'vue-router'
+import students from '../../api/students'
 
 export default {
   name: 'StudentSidebar',
@@ -20,15 +22,22 @@ export default {
     ChevronRight,
     User,
     ClipboardPenLine,
-    ChartPie
+    ChartPie,
+    LogOutIcon,
   },
   setup() {
     const isExpanded = ref(true)
+    const student = ref(null)
 
     const toggleSidebar = () => {
       isExpanded.value = !isExpanded.value
     }
 
+    const handleLogout = () => {
+      localStorage.clear()
+      window.location.href = '/'
+    }
+    
     const menuItems = [
       {
         to: '/student/dashboard',
@@ -46,6 +55,20 @@ export default {
         label: 'Remark Request',
       }
     ]
+
+    onMounted(async () => {
+      const studentId = localStorage.getItem('id');
+
+      try {
+        const studentProfile = await students.getStudentProfile(studentId)
+        if (studentProfile.status === "success") {
+          student.value = studentProfile.data
+        }
+      } catch (error) {
+        console.error("Error fetching student profile:", error)
+        student.value = null
+      }
+    })
 
     return {
       isExpanded,
@@ -73,10 +96,10 @@ export default {
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-gray-900 truncate">
-                John Doe
+                {{ student?.name || 'Loading...' }}
               </p>
               <p class="text-xs text-gray-500 truncate">
-                student@graduate.utm.my
+                {{ student?.email || 'Loading...' }}
               </p>
             </div>
           </div>
@@ -114,22 +137,14 @@ export default {
 
       <!-- Footer -->
       <div class="p-4 border-t border-gray-200">
-        <RouterLink to="/student/settings" :class="[ 
-          'flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200', 
-          !isExpanded && 'justify-center' 
+        <button @click="handleLogout" :class="[
+          'flex gap-2 items-center px-3 py-2 rounded-lg text-rose-700 hover:text-rose-800 hover:bg-rose-100 transition-colors duration-200',
         ]">
-          <svg :class="[ 
-            'flex-shrink-0 w-5 h-5', 
-          ]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+          <LogOutIcon class="size-4" />
           <span class="transition-opacity duration-300">
-            Settings
+            Logout
           </span>
-        </RouterLink>
+        </button>
       </div>
     </div>
   </div>
