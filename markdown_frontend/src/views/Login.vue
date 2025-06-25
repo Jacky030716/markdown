@@ -214,7 +214,7 @@ const handleLogin = async () => {
           router.push('/student/dashboard');
           break;
         case 'admin':
-          router.push('/admin/dashboard');
+          router.push('/admin/user-management');
           break;
         case 'advisor':
           router.push('/advisor/dashboard');

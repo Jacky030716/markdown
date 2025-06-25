@@ -26,5 +26,10 @@ return function (App $app) {
         $group->group('/courses', require __DIR__ . '/routes/courses.php');
         $group->group('/students', require __DIR__ . '/routes/students.php');
         $group->group('/advisors', require __DIR__ . '/routes/advisors.php');
+        $group->group('/admin', function (Group $adminGroup) {
+            (require __DIR__ . '/routes/admin/admin.php')($adminGroup);
+            (require __DIR__ . '/routes/admin/admin_courses.php')($adminGroup);
+            (require __DIR__ . '/routes/admin/admin_manage_courses.php')($adminGroup);
+        });
     });
 };
