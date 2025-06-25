@@ -6,6 +6,71 @@ use Slim\Routing\RouteCollectorProxy;
 
 return function (RouteCollectorProxy $group) {
 
+    // New endpoint: Get student_id by user_id
+$group->get('/user/{user_id}', function (Request $request, Response $response, array $args) {
+    $userId = $args['user_id'];
+    
+    try {
+        // Get database connection
+        $pdo = $this->get('db');
+        
+        // Validate user_id is numeric
+        if (!is_numeric($userId)) {
+            $response->getBody()->write(json_encode([
+                'message' => 'Invalid user ID format',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+        
+        // Prepare and execute query to get student_id from user_id
+        $stmt = $pdo->prepare(
+            'SELECT s.id as student_id, s.matric_no, s.name 
+             FROM students AS s
+             JOIN users AS u ON s.user_id = u.id
+             WHERE s.user_id = :user_id AND u.is_active = 1'
+        );
+        
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $studentData = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$studentData) {
+            $response->getBody()->write(json_encode([
+                'message' => "No student found for user ID: {$userId}",
+                'status' => 'error'
+            ]));
+            return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        }
+        
+        // Success response
+        $response->getBody()->write(json_encode([
+            'data' => $studentData,
+            'status' => 'success'
+        ]));
+        return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        
+    } catch (PDOException $e) {
+        error_log("Database error fetching student by user ID {$userId}: " . $e->getMessage());
+        
+        $response->getBody()->write(json_encode([
+            'message' => 'Database error occurred',
+            'status' => 'error'
+        ]));
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        
+    } catch (Exception $e) {
+        error_log("Application error fetching student by user ID {$userId}: " . $e->getMessage());
+        
+        $response->getBody()->write(json_encode([
+            'message' => 'An unexpected error occurred',
+            'status' => 'error'
+        ]));
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});
+
     // For sidebar (get student profile)
     $group->get('/{student_id}/profile', function (Request $request, Response $response, array $args) {
         $studentId = $args['student_id'];

@@ -38,6 +38,23 @@ apiClient.interceptors.response.use(
 
 export default {
   // General Use
+
+  // Add this new method to get student_id by user_id
+async getStudentIdByUserId(userId) {
+  try {
+    const response = await apiClient.get(`/students/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching student ID by user ID:", error);
+    if (error.response) {
+      console.error("Response status:", error.response.status);
+      console.error("Response data:", error.response.data);
+    }
+    throw error;
+  }
+},
+
+
   async getStudentProfile(studentId) {
     try {
       // Fix: Added missing backticks for template literal
@@ -54,7 +71,9 @@ export default {
     }
   },
 
+  
 
+  
   /**
    * Fetch all courses for a student (currently hardcoded to student ID 4)
    * @param {number} studentId - The student ID (not used in current implementation)

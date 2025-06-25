@@ -57,23 +57,39 @@ export default {
     ]
 
     onMounted(async () => {
-      const studentId = localStorage.getItem('id');
+  const userId = localStorage.getItem('id') // This is the user_id from login
 
-      try {
-        const studentProfile = await students.getStudentProfile(studentId)
-        if (studentProfile.status === "success") {
-          student.value = studentProfile.data
-        }
-      } catch (error) {
-        console.error("Error fetching student profile:", error)
-        student.value = null
+  try {
+    // First, get the student_id based on user_id
+    const studentIdResponse = await students.getStudentIdByUserId(userId)
+    
+    if (studentIdResponse.status === "success") {
+      const studentId = studentIdResponse.data.student_id
+      
+      // Store student_id for future use
+      localStorage.setItem('student_id', studentId)
+      
+      // Now fetch the complete student profile using student_id
+      const studentProfile = await students.getStudentProfile(studentId)
+      
+      if (studentProfile.status === "success") {
+        student.value = studentProfile.data
       }
-    })
+    } else {
+      console.error("Student not found for user ID:", userId)
+      student.value = null
+    }
+  } catch (error) {
+    console.error("Error fetching student data:", error)
+    student.value = null
+  }
+})
 
     return {
       isExpanded,
       toggleSidebar,
-      menuItems
+      menuItems,
+      student
     }
   },
 }
