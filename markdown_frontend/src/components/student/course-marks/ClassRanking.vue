@@ -16,7 +16,7 @@
     <div v-else-if="rankingData" class="ranking-content">
       <!-- Student Position Card -->
       <div class="ranking-card">
-        <h3>Your Position</h3>
+        <h3>Your Rank</h3>
         <div class="rank">{{ rankingData.current_student.position_text }}</div>
         <div class="percentile">{{ rankingData.current_student.percentile_text }}</div>
         <div class="score">Total Score: {{ rankingData.current_student.total_score }}%</div>
@@ -300,36 +300,45 @@ export default {
 
 .ranking-card {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: 1rem;
+  padding: 1rem;
   text-align: center;
   margin-bottom: 1.5rem;
+  transition: transform 0.25s ease;
+}
+
+.ranking-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .ranking-card h3 {
-  margin: 0 0 1rem 0;
+  margin-bottom: 0.75rem;
   color: #374151;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .rank {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #22c55e;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #4f46e5;
   margin-bottom: 0.5rem;
 }
 
 .percentile {
+  font-size: 1rem;
+  font-weight: 500;
   color: #6b7280;
-  font-size: 0.875rem;
   margin-bottom: 0.5rem;
 }
 
 .score {
-  color: #374151;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .chart-container {

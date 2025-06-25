@@ -47,11 +47,28 @@
       </table>
 
       <!-- Total Weight Score Row -->
-      <div class="px-6 py-4 flex justify-between bg-gray-50 border-t border-gray-200">
-        <span class="font-semibold text-gray-800">TOTAL WEIGHTED SCORE</span>
-        <span class="font-semibold text-gray-800">
-          {{ totalWeightScore.toFixed(2) }} / {{ totalMaxWeightedScore.toFixed(2) }}
-        </span>
+      <div class="bg-gray-50 border-t border-gray-200">
+        <table class="min-w-full">
+          <tbody>
+            <tr>
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-semibold text-gray-800" colspan="4">
+                TOTAL WEIGHTED SCORE
+              </td>
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-semibold text-gray-800">
+                {{ totalWeightScore.toFixed(2) }} / {{ totalMaxWeightedScore.toFixed(2) }}
+              </td>
+            </tr>
+            <!-- Grade Row -->
+            <tr class="border-t border-gray-200">
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-semibold text-gray-800" colspan="4">
+                GRADE
+              </td>
+              <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-semibold text-gray-800">
+                {{ calculateGrade(finalPercentage) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -114,10 +131,38 @@ export default {
       }, 0);
     });
 
+    // Calculate final percentage
+    const finalPercentage = computed(() => {
+      if (totalMaxWeightedScore.value === 0) {
+        return 0;
+      }
+      
+      return totalWeightScore.value;
+    });
+
+    // Grade calculation function
+    const calculateGrade = (mark) => {
+      if (mark >= 90) return 'A+';
+      if (mark >= 80) return 'A';
+      if (mark >= 75) return 'A-';
+      if (mark >= 70) return 'B+';
+      if (mark >= 65) return 'B';
+      if (mark >= 60) return 'B-';
+      if (mark >= 55) return 'C+';
+      if (mark >= 50) return 'C';
+      if (mark >= 45) return 'C-';
+      if (mark >= 40) return 'D+';
+      if (mark >= 35) return 'D';
+      if (mark >= 30) return 'D-';
+      return 'E';
+    };
+
     return {
       getWeightedScore,
       totalWeightScore,
-      totalMaxWeightedScore
+      totalMaxWeightedScore,
+      finalPercentage,
+      calculateGrade
     };
   }
 };

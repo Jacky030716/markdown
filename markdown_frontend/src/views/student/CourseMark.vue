@@ -1,7 +1,7 @@
 <template>
   <div class="bg-gray-100 min-h-screen font-sans p-4 sm:p-6 lg:p-8">
     <div
-      class="max-w-screen-xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
+      class="max-w-screen-xxl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
     >
       <div
         class="flex flex-col lg:flex-row justify-between items-start lg:items-center p-6 md:p-10 gap-5 border-b border-gray-200"
@@ -67,14 +67,9 @@
 
               <div>
                 <WhatIfSimulator
-                  :currentMarks="currentMarks"
-                  :remainingWeight="remainingWeight"
-                  :quiz1Score="quiz1Score"
-                  :assignment2Score="assignment2Score"
-                  :studentId="studentId"
-                  :courseId="selectedCourse.id"
-                  @update:quiz1Score="quiz1Score = $event"
-                  @update:assignment2Score="assignment2Score = $event"
+                  :marksData="marksData"
+                  :loading="marksLoading"
+                  :error="error"
                 />
               </div>
             </div>
@@ -166,18 +161,18 @@ export default {
       },
     ]);
 
-    const currentMarks = ref({
-      total: 94.8,
-      weight: 70,
-    });
+    // const currentMarks = ref({
+    //   total: 94.8,
+    //   weight: 70,
+    // });
 
-    const remainingWeight = ref({
-      quiz1: 30,
-      assignment2: 16,
-    });
+    // const remainingWeight = ref({
+    //   quiz1: 30,
+    //   assignment2: 16,
+    // });
 
-    const quiz1Score = ref(85);
-    const assignment2Score = ref(90);
+    // const quiz1Score = ref(85);
+    // const assignment2Score = ref(90);
 
     // Computed property for progress data
     const progressData = computed(() => {
@@ -386,10 +381,6 @@ export default {
       marksData,
       progressData,
       comparisonData,
-      currentMarks,
-      remainingWeight,
-      quiz1Score,
-      assignment2Score,
       coursesLoading,
       marksLoading,
       error,

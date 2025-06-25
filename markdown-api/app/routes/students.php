@@ -4,27 +4,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Routing\RouteCollectorProxy;
 
-/**
- * Grade calculation function
- * Calculates letter grade based on numeric mark
- */
-function calculateGrades($mark)
-{
-    if ($mark >= 90) return 'A+';
-    if ($mark >= 80) return 'A';
-    if ($mark >= 75) return 'A-';
-    if ($mark >= 70) return 'B+';
-    if ($mark >= 65) return 'B';
-    if ($mark >= 60) return 'B-';
-    if ($mark >= 55) return 'C+';
-    if ($mark >= 50) return 'C';
-    if ($mark >= 45) return 'C-';
-    if ($mark >= 40) return 'D+';
-    if ($mark >= 35) return 'D';
-    if ($mark >= 30) return 'D-';
-    return 'E';
-}
-
 return function (RouteCollectorProxy $group) {
 
     // For sidebar (get student profile)
@@ -61,9 +40,6 @@ return function (RouteCollectorProxy $group) {
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
         }
     });
-
-
-
 
 
 
