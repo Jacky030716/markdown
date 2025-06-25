@@ -5,44 +5,176 @@
       <h2 class="card-title">Anonymous Comparison</h2>
     </div>
 
-    <!-- Performance Comparison Table -->
-    <table class="comparison-table">
-      <thead>
-        <tr>
-          <th>Student</th>
-          <th>Quiz 1</th>
-          <th>Assignment 1</th>
-          <th>Lab 1</th>
-          <th>Quiz 2</th>
-          <th>Final</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Loop through comparison data and render each row -->
-        <tr v-for="(row, index) in comparisonData" :key="index" :class="{ 'student-row': row.student === 'You' }">
-          <td>{{ row.student }}</td>
-          <td>{{ row.quiz1 }}</td>
-          <td>{{ row.assignment1 }}</td>
-          <td>{{ row.lab1 }}</td>
-          <td>{{ row.quiz2 }}</td>
-          <td>{{ row.final }}</td>
-          <td>{{ row.total }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div v-if="loading" class="loading-container">
+      <p>Loading comparison data...</p>
+    </div>
+
+    <div v-else-if="error" class="error-container">
+      <p class="error-message">{{ error }}</p>
+    </div>
+
+    <div v-else-if="tableData && tableData.length > 0" class="table-container">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th v-for="component in componentsList" :key="component.id">
+              {{ component.name }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(student, index) in sortedStudents"
+            :key="student.student_id"
+            :class="{ 'student-row': student.is_current_student, 'class-average-row': student.is_class_average }"
+          >
+            <td>
+              {{ student.is_current_student ? 'You' : 
+                 student.is_class_average ? 'Class Average' : 
+                 `Student ${getAnonymousLabel(index)}` }}
+            </td>
+            <td v-for="component in componentsList" :key="component.id">
+              {{ formatPercentage(getComponentScore(student, component.id)) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div v-else class="no-data-container">
+      <p>No comparison data available for this course.</p>
+    </div>
   </div>
 </template>
 
 <script>
+import { computed } from 'vue';
+
 export default {
-  name: "PerformanceComparison",
+  name: 'AnonymousComparison',
   props: {
-    comparisonData: {
-      type: Array,
-      required: true,
-    }
-  }
+    analyticsData: {
+      type: Object,
+      default: null,
+    },
+    loading: {
+      type: Boolean,
+      default: false,
+    },
+    error: {
+      type: String,
+      default: null,
+    },
+  },
+  setup(props) {
+    // Extract components list
+    const componentsList = computed(() => {
+      return props.analyticsData?.components_list || [];
+    });
+
+    // Process table data
+    const tableData = computed(() => {
+      if (!props.analyticsData?.anonymous_comparison) {
+        return [];
+      }
+
+      const students = props.analyticsData.anonymous_comparison;
+      const classAverages = props.analyticsData.class_averages || [];
+
+      // Calculate class average row
+      const classAverageRow = {
+        student_id: 'class_average',
+        is_current_student: false,
+        is_class_average: true,
+        components: {},
+        total_percentage: null
+      };
+
+      // Calculate total class average
+      let totalWeightedSum = 0;
+      let totalWeight = 0;
+
+      classAverages.forEach(avg => {
+        classAverageRow.components[avg.component_id] = {
+          percentage: avg.average_percentage,
+          weight: avg.weight
+        };
+        
+        if (avg.average_percentage !== null) {
+          totalWeightedSum += avg.average_percentage * avg.weight;
+          totalWeight += avg.weight;
+        }
+      });
+
+      if (totalWeight > 0) {
+        classAverageRow.total_percentage = totalWeightedSum / totalWeight;
+      }
+
+      return [...students, classAverageRow];
+    });
+
+    // Sort students: current student first, then by total percentage (descending), then class average last
+    const sortedStudents = computed(() => {
+      if (!tableData.value) return [];
+
+      return [...tableData.value].sort((a, b) => {
+        // Current student always first
+        if (a.is_current_student) return -1;
+        if (b.is_current_student) return 1;
+        
+        // Class average always last
+        if (a.is_class_average) return 1;
+        if (b.is_class_average) return -1;
+        
+        // Sort others by total percentage (descending)
+        const aTotal = a.total_percentage || 0;
+        const bTotal = b.total_percentage || 0;
+        return bTotal - aTotal;
+      });
+    });
+
+    // Get anonymous label for students (A, B, C, etc.)
+    const getAnonymousLabel = (index) => {
+      // Skip the current student and class average when generating labels
+      let labelIndex = 0;
+      const currentStudent = sortedStudents.value.find(s => s.is_current_student);
+      const currentStudentIndex = currentStudent ? sortedStudents.value.indexOf(currentStudent) : -1;
+      
+      if (index <= currentStudentIndex) {
+        labelIndex = index - 1; // Adjust for "You" being first
+      } else {
+        labelIndex = index - 1; // Adjust for "You" being first
+      }
+      
+      // Skip class average
+      if (sortedStudents.value[index].is_class_average) {
+        return '';
+      }
+      
+      return String.fromCharCode(65 + Math.max(0, labelIndex)); // A, B, C, ...
+    };
+
+    // Get component score for a student
+    const getComponentScore = (student, componentId) => {
+      return student.components[componentId]?.percentage || null;
+    };
+
+    // Format percentage display
+    const formatPercentage = (value) => {
+      if (value === null || value === undefined) return '-';
+      return `${value.toFixed(1)}%`;
+    };
+
+    return {
+      componentsList,
+      tableData,
+      sortedStudents,
+      getAnonymousLabel,
+      getComponentScore,
+      formatPercentage,
+    };
+  },
 };
 </script>
 
@@ -82,26 +214,80 @@ export default {
   color: #1e293b;
 }
 
-.comparison-table {
-  width: 100%;
-  border-collapse: collapse;
+.table-container {
+  overflow-x: auto;
   margin-top: 20px;
 }
 
-.comparison-table th, .comparison-table td {
-  padding: 10px;
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 12px 8px;
   text-align: center;
-  border-bottom: 1px solid #e0e7ff;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .comparison-table th {
-  background: #f8fafc;
+  background-color: #f8fafc;
   font-weight: 600;
-  color: #475569;
+  color: #374151;
+  border-bottom: 2px solid #d1d5db;
 }
 
-.comparison-table .student-row {
-  background: #eff6ff;
+.comparison-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.student-row {
+  background-color: #eff6ff !important;
   font-weight: 600;
+}
+
+.student-row:hover {
+  background-color: #dbeafe !important;
+}
+
+.class-average-row {
+  background-color: #fef3c7 !important;
+  font-weight: 600;
+  border-top: 2px solid #f59e0b;
+}
+
+.class-average-row:hover {
+  background-color: #fde68a !important;
+}
+
+.total-cell {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.loading-container,
+.error-container,
+.no-data-container {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.error-message {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .comparison-table {
+    font-size: 0.8rem;
+  }
+  
+  .comparison-table th,
+  .comparison-table td {
+    padding: 8px 4px;
+  }
 }
 </style>

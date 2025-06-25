@@ -33,7 +33,6 @@
           </option>
           <option v-for="course in filteredCourses" :key="course.id" :value="course.id">
             {{ course.course_code }} - {{ course.course_name }}
-            <span v-if="course.credit_hours">({{ course.credit_hours }} credit hours)</span>
           </option>
         </select>
       </div>

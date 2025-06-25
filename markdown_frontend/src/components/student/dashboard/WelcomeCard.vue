@@ -28,10 +28,10 @@
 
     <div class="quick-actions">
       <a href="/student/marks" class="action-btn">
-        📊 View Marks
+        📊 View Course Marks
       </a>
       <a href="/student/remark" class="action-btn">
-        📝 Submit Remark
+        📝 Request Remark
       </a>
     </div>
   </div>

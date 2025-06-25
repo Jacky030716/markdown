@@ -4,31 +4,146 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Routing\RouteCollectorProxy;
 
-/**
- * Grade calculation function
- * Calculates letter grade based on numeric mark
- */
-function calculateGrades($mark)
-{
-    if ($mark >= 90) return 'A+';
-    if ($mark >= 80) return 'A';
-    if ($mark >= 75) return 'A-';
-    if ($mark >= 70) return 'B+';
-    if ($mark >= 65) return 'B';
-    if ($mark >= 60) return 'B-';
-    if ($mark >= 55) return 'C+';
-    if ($mark >= 50) return 'C';
-    if ($mark >= 45) return 'C-';
-    if ($mark >= 40) return 'D+';
-    if ($mark >= 35) return 'D';
-    if ($mark >= 30) return 'D-';
-    return 'E';
-}
-
 return function (RouteCollectorProxy $group) {
 
+    // New endpoint: Get student_id by user_id
+$group->get('/user/{user_id}', function (Request $request, Response $response, array $args) {
+    $userId = $args['user_id'];
+    
+    try {
+        // Get database connection
+        $pdo = $this->get('db');
+        
+        // Validate user_id is numeric
+        if (!is_numeric($userId)) {
+            $response->getBody()->write(json_encode([
+                'message' => 'Invalid user ID format',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+        
+        // Prepare and execute query to get student_id from user_id
+        $stmt = $pdo->prepare(
+            'SELECT s.id as student_id, s.matric_no, s.name 
+             FROM students AS s
+             JOIN users AS u ON s.user_id = u.id
+             WHERE s.user_id = :user_id AND u.is_active = 1'
+        );
+        
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $studentData = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$studentData) {
+            $response->getBody()->write(json_encode([
+                'message' => "No student found for user ID: {$userId}",
+                'status' => 'error'
+            ]));
+            return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        }
+        
+        // Success response
+        $response->getBody()->write(json_encode([
+            'data' => $studentData,
+            'status' => 'success'
+        ]));
+        return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        
+    } catch (PDOException $e) {
+        error_log("Database error fetching student by user ID {$userId}: " . $e->getMessage());
+        
+        $response->getBody()->write(json_encode([
+            'message' => 'Database error occurred',
+            'status' => 'error'
+        ]));
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        
+    } catch (Exception $e) {
+        error_log("Application error fetching student by user ID {$userId}: " . $e->getMessage());
+        
+        $response->getBody()->write(json_encode([
+            'message' => 'An unexpected error occurred',
+            'status' => 'error'
+        ]));
+        return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+    }
+});
+
+    // For sidebar (get student profile)
+    $group->get('/{student_id}/profile', function (Request $request, Response $response, array $args) {
+        $studentId = $args['student_id'];
+        
+        try {
+            // Get database connection
+            $pdo = $this->get('db');
+            
+            // Validate student_id is numeric
+            if (!is_numeric($studentId)) {
+                $response->getBody()->write(json_encode([
+                    'message' => 'Invalid student ID format',
+                    'status' => 'error'
+                ]));
+                return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+            }
+            
+            // Prepare and execute query - Fixed column names to match database schema
+            $stmt = $pdo->prepare(
+                'SELECT s.user_id, s.id as student_db_id, s.matric_no, s.name, s.program, s.year_of_study, s.advisor_id, u.email, u.role, u.is_active
+                 FROM students AS s
+                 JOIN users AS u ON s.user_id = u.id
+                 WHERE s.id = :student_id AND u.is_active = 1'
+            );
+            
+            // Fix: Use proper parameter binding
+            $stmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$student) {
+                $response->getBody()->write(json_encode([
+                    'message' => "Student with ID: {$studentId} not found or is inactive",
+                    'status' => 'error'
+                ]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+            
+            // Success response
+            $response->getBody()->write(json_encode([
+                'data' => $student,
+                'status' => 'success'
+            ]));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+            
+        } catch (PDOException $e) {
+            // Log the actual error for debugging
+            error_log("Database error fetching student profile {$studentId}: " . $e->getMessage());
+            error_log("SQL Error Code: " . $e->getCode());
+            
+            $response->getBody()->write(json_encode([
+                'message' => 'Database error occurred',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+            
+        } catch (Exception $e) {
+            // Log general errors
+            error_log("Application error fetching student profile {$studentId}: " . $e->getMessage());
+            
+            $response->getBody()->write(json_encode([
+                'message' => 'An unexpected error occurred',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    });
+
+
+
     //1. For Dashboard Page
-    /**
+    /** a)
      * Route: GET /api/v1/students/{studentId}/progress-summary
      * Description: Retrieves a summary of student's overall academic progress.
      * Parameters:
@@ -98,7 +213,7 @@ return function (RouteCollectorProxy $group) {
     });
 
 
-    /**
+    /** b)
      * Route: GET /api/v1/students/{studentId}/info
      * Description: Retrieves detailed information about a student based on their student_id.
      * Parameters:
@@ -175,8 +290,9 @@ return function (RouteCollectorProxy $group) {
 
 
 
+
     // 2. For Course Mark Page
-    /**
+    /** a)
      * Route: GET /api/v1/students/courses
      * Description: Retrieves all active courses for a specific student.
      * Returns:
@@ -247,7 +363,7 @@ return function (RouteCollectorProxy $group) {
         }
     });
 
-    /**
+    /** b)
      * Route: GET /api/v1/students/{studentId}/courses/{courseId}/marks
      * Description: Retrieves the marks for a specific student and course.
      * Parameters:
@@ -361,7 +477,7 @@ return function (RouteCollectorProxy $group) {
         }
     });
 
-    /**
+    /** c)
      * Route: GET /api/v1/students/{studentId}/courses/{courseId}/details
      * Description: Retrieves detailed information about a course for a specific student.
      * Parameters:
@@ -457,8 +573,429 @@ return function (RouteCollectorProxy $group) {
         }
     });
 
+
+    /** d)
+     * Route: GET /api/v1/students/{studentId}/courses/{courseId}/analytics
+     * Description: Retrieves performance analytics including student marks and class averages
+     * Parameters:
+     * - studentId (int): The unique identifier of the student.
+     * - courseId (int): The unique identifier of the course.
+     * Returns:
+     * - 200 OK: JSON object with student marks, class averages, and anonymous comparison data
+     * - 404 Not Found: JSON message if no data found
+     * - 500 Internal Server Error: JSON message for database or unexpected errors.
+     */
+    $group->get('/{studentId}/courses/{courseId}/analytics', function (Request $request, Response $response, array $args) {
+        $studentId = intval($args['studentId']);
+        $courseId = intval($args['courseId']);
+
+        // Basic validation
+        if ($studentId <= 0 || $courseId <= 0) {
+            $response->getBody()->write(json_encode([
+                'message' => 'Invalid student ID or course ID',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        try {
+            $pdo = $this->get('db');
+
+            // First check if the student is enrolled in the course
+            $enrollmentStmt = $pdo->prepare('
+            SELECT COUNT(*) as count 
+            FROM enrollments 
+            WHERE student_id = :student_id AND course_id = :course_id AND status = "enrolled"
+        ');
+            $enrollmentStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+            $enrollmentStmt->bindParam(':course_id', $courseId, PDO::PARAM_INT);
+            $enrollmentStmt->execute();
+
+            $enrollmentResult = $enrollmentStmt->fetch(PDO::FETCH_ASSOC);
+            if ($enrollmentResult['count'] == 0) {
+                $response->getBody()->write(json_encode([
+                    'message' => 'Student is not enrolled in this course',
+                    'status' => 'error'
+                ]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+
+            // Get student's marks with component details
+            $studentMarksStmt = $pdo->prepare('
+            SELECT 
+                mc.id as component_id,
+                mc.name,
+                mc.type,
+                mc.max_mark,
+                mc.weight,
+                COALESCE(sm.mark, NULL) as mark,
+                CASE 
+                    WHEN sm.mark IS NOT NULL THEN ROUND((sm.mark / mc.max_mark) * 100, 2)
+                    ELSE NULL 
+                END as percentage
+            FROM mark_components mc
+            LEFT JOIN student_marks sm ON mc.id = sm.component_id AND sm.student_id = :student_id
+            WHERE mc.course_id = :course_id
+            ORDER BY mc.type, mc.name
+        ');
+            $studentMarksStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+            $studentMarksStmt->bindParam(':course_id', $courseId, PDO::PARAM_INT);
+            $studentMarksStmt->execute();
+            $studentMarks = $studentMarksStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Get class averages for each component
+            $classAveragesStmt = $pdo->prepare('
+            SELECT 
+                mc.id as component_id,
+                mc.name,
+                mc.type,
+                mc.max_mark,
+                mc.weight,
+                ROUND(AVG(sm.mark), 2) as average_mark,
+                ROUND(AVG((sm.mark / mc.max_mark) * 100), 2) as average_percentage,
+                COUNT(sm.mark) as student_count
+            FROM mark_components mc
+            LEFT JOIN student_marks sm ON mc.id = sm.component_id
+            LEFT JOIN students s ON sm.student_id = s.id
+            LEFT JOIN enrollments e ON s.id = e.student_id AND e.course_id = mc.course_id
+            WHERE mc.course_id = :course_id AND e.status = "enrolled" AND sm.mark IS NOT NULL
+            GROUP BY mc.id, mc.name, mc.type, mc.max_mark, mc.weight
+            ORDER BY mc.type, mc.name
+        ');
+            $classAveragesStmt->bindParam(':course_id', $courseId, PDO::PARAM_INT);
+            $classAveragesStmt->execute();
+            $classAverages = $classAveragesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Get anonymous comparison data (all students' marks for the course)
+            $comparisonStmt = $pdo->prepare('
+            SELECT 
+                s.id as student_id,
+                mc.id as component_id,
+                mc.name,
+                mc.type,
+                mc.max_mark,
+                mc.weight,
+                COALESCE(sm.mark, NULL) as mark,
+                CASE 
+                    WHEN sm.mark IS NOT NULL THEN ROUND((sm.mark / mc.max_mark) * 100, 2)
+                    ELSE NULL 
+                END as percentage
+            FROM students s
+            JOIN enrollments e ON s.id = e.student_id
+            JOIN mark_components mc ON e.course_id = mc.course_id
+            LEFT JOIN student_marks sm ON mc.id = sm.component_id AND sm.student_id = s.id
+            WHERE mc.course_id = :course_id AND e.status = "enrolled"
+            ORDER BY s.id, mc.type, mc.name
+        ');
+            $comparisonStmt->bindParam(':course_id', $courseId, PDO::PARAM_INT);
+            $comparisonStmt->execute();
+            $comparisonData = $comparisonStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Process comparison data to group by student
+            $studentComparison = [];
+            $componentsList = [];
+
+            foreach ($comparisonData as $row) {
+                $sid = $row['student_id'];
+                $componentId = $row['component_id'];
+
+                if (!isset($studentComparison[$sid])) {
+                    $studentComparison[$sid] = [
+                        'student_id' => $sid,
+                        'is_current_student' => ($sid == $studentId),
+                        'components' => [],
+                        'total_weighted_score' => 0,
+                        'total_weight' => 0
+                    ];
+                }
+
+                // Track unique components
+                if (!isset($componentsList[$componentId])) {
+                    $componentsList[$componentId] = [
+                        'id' => $componentId,
+                        'name' => $row['name'],
+                        'type' => $row['type'],
+                        'weight' => (float)$row['weight']
+                    ];
+                }
+
+                $studentComparison[$sid]['components'][$componentId] = [
+                    'name' => $row['name'],
+                    'mark' => $row['mark'] !== null ? (float)$row['mark'] : null,
+                    'percentage' => $row['percentage'] !== null ? (float)$row['percentage'] : null,
+                    'weight' => (float)$row['weight']
+                ];
+
+                // Calculate weighted total if mark exists
+                if ($row['mark'] !== null && $row['percentage'] !== null) {
+                    $studentComparison[$sid]['total_weighted_score'] += (float)$row['percentage'] * (float)$row['weight'];
+                    $studentComparison[$sid]['total_weight'] += (float)$row['weight'];
+                }
+            }
+
+            // Calculate final totals for each student
+            foreach ($studentComparison as &$student) {
+                if ($student['total_weight'] > 0) {
+                    $student['total_percentage'] = round($student['total_weighted_score'] / $student['total_weight'], 2);
+                } else {
+                    $student['total_percentage'] = null;
+                }
+            }
+
+            // Convert numeric fields for student marks
+            foreach ($studentMarks as &$mark) {
+                $mark['component_id'] = (int)$mark['component_id'];
+                $mark['max_mark'] = (float)$mark['max_mark'];
+                $mark['weight'] = (float)$mark['weight'];
+                $mark['mark'] = $mark['mark'] !== null ? (float)$mark['mark'] : null;
+                $mark['percentage'] = $mark['percentage'] !== null ? (float)$mark['percentage'] : null;
+            }
+
+            // Convert numeric fields for class averages
+            foreach ($classAverages as &$avg) {
+                $avg['component_id'] = (int)$avg['component_id'];
+                $avg['max_mark'] = (float)$avg['max_mark'];
+                $avg['weight'] = (float)$avg['weight'];
+                $avg['average_mark'] = $avg['average_mark'] !== null ? (float)$avg['average_mark'] : null;
+                $avg['average_percentage'] = $avg['average_percentage'] !== null ? (float)$avg['average_percentage'] : null;
+                $avg['student_count'] = (int)$avg['student_count'];
+            }
+
+            $response->getBody()->write(json_encode([
+                'data' => [
+                    'student_marks' => $studentMarks,
+                    'class_averages' => $classAverages,
+                    'anonymous_comparison' => array_values($studentComparison),
+                    'components_list' => array_values($componentsList)
+                ],
+                'status' => 'success',
+                'message' => 'Performance analytics retrieved successfully'
+            ]));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        } catch (PDOException $e) {
+            error_log("Database error fetching analytics for student {$studentId}, course {$courseId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'message' => 'Internal Server Error',
+                'error' => $e->getMessage(),
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        } catch (Exception $e) {
+            error_log("General error fetching analytics: " . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'message' => 'Internal Server Error',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    });
+
+
+    /** e)
+     * Route: GET /api/v1/students/{studentId}/courses/{courseId}/ranking
+     * Description: Retrieves the class ranking data for a specific student and course.
+     * Parameters:
+     * - studentId (int): The unique identifier of the student.
+     * - courseId (int): The unique identifier of the course.
+     * Returns:
+     * - 200 OK: JSON object with ranking data including student's position and class distribution.
+     * - 404 Not Found: JSON message if no ranking data found.
+     * - 500 Internal Server Error: JSON message for database or unexpected errors.
+     */
+    $group->get('/{studentId}/courses/{courseId}/ranking', function (Request $request, Response $response, array $args) {
+        $studentId = intval($args['studentId']);
+        $courseId = intval($args['courseId']);
+
+        // Basic validation
+        if ($studentId <= 0 || $courseId <= 0) {
+            $response->getBody()->write(json_encode([
+                'message' => 'Invalid student ID or course ID',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        try {
+            $pdo = $this->get('db');
+
+            // First check if the student is enrolled in the course
+            $enrollmentStmt = $pdo->prepare('
+            SELECT COUNT(*) as count 
+            FROM enrollments 
+            WHERE student_id = :student_id AND course_id = :course_id AND status = "enrolled"
+        ');
+            $enrollmentStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+            $enrollmentStmt->bindParam(':course_id', $courseId, PDO::PARAM_INT);
+            $enrollmentStmt->execute();
+
+            $enrollmentResult = $enrollmentStmt->fetch(PDO::FETCH_ASSOC);
+            if ($enrollmentResult['count'] == 0) {
+                $response->getBody()->write(json_encode([
+                    'message' => 'Student is not enrolled in this course',
+                    'status' => 'error'
+                ]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+
+            // Get all students' total weighted scores for the course
+            $stmt = $pdo->prepare('
+            WITH student_scores AS (
+                SELECT 
+                    s.id as student_id,
+                    s.name as student_name,
+                    s.matric_no,
+                    COALESCE(SUM(
+                        CASE 
+                            WHEN sm.mark IS NOT NULL THEN 
+                                (sm.mark / mc.max_mark) * mc.weight
+                            ELSE 0 
+                        END
+                    ), 0) as total_weighted_score
+                FROM students s
+                INNER JOIN enrollments e ON s.id = e.student_id
+                LEFT JOIN mark_components mc ON e.course_id = mc.course_id
+                LEFT JOIN student_marks sm ON s.id = sm.student_id AND mc.id = sm.component_id
+                WHERE e.course_id = :course_id AND e.status = "enrolled"
+                GROUP BY s.id, s.name, s.matric_no
+            ),
+            ranked_students AS (
+                SELECT 
+                    *,
+                    ROW_NUMBER() OVER (ORDER BY total_weighted_score DESC) as rank_position,
+                    COUNT(*) OVER () as total_students
+                FROM student_scores
+            )
+            SELECT 
+                student_id,
+                student_name,
+                matric_no,
+                total_weighted_score,
+                rank_position,
+                total_students,
+                CASE 
+                    WHEN student_id = :student_id THEN 1 
+                    ELSE 0 
+                END as is_current_student
+            FROM ranked_students
+            ORDER BY rank_position
+        ');
+
+            $stmt->bindParam(':course_id', $courseId, PDO::PARAM_INT);
+            $stmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $rankings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($rankings)) {
+                $response->getBody()->write(json_encode([
+                    'message' => 'No ranking data found for this course',
+                    'data' => null,
+                    'status' => 'success'
+                ]));
+                return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+            }
+
+            // Find current student's data
+            $currentStudentData = null;
+            foreach ($rankings as $ranking) {
+                if ($ranking['is_current_student'] == 1) {
+                    $currentStudentData = $ranking;
+                    break;
+                }
+            }
+
+            if (!$currentStudentData) {
+                $response->getBody()->write(json_encode([
+                    'message' => 'Current student not found in rankings',
+                    'status' => 'error'
+                ]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+
+            // Calculate percentile and position data
+            $totalStudents = intval($currentStudentData['total_students']);
+            $currentPosition = intval($currentStudentData['rank_position']);
+            $studentsAbove = $currentPosition - 1;
+            $studentsBelow = $totalStudents - $currentPosition;
+
+            // Calculate percentile (higher score = higher percentile)
+            $percentile = $totalStudents > 1 ?
+                round((($totalStudents - $currentPosition) / ($totalStudents - 1)) * 100) : 100;
+
+            // Determine ordinal suffix for position
+            $ordinalSuffix = 'th';
+            if ($currentPosition % 100 < 11 || $currentPosition % 100 > 13) {
+                switch ($currentPosition % 10) {
+                    case 1:
+                        $ordinalSuffix = 'st';
+                        break;
+                    case 2:
+                        $ordinalSuffix = 'nd';
+                        break;
+                    case 3:
+                        $ordinalSuffix = 'rd';
+                        break;
+                }
+            }
+
+            // Prepare response data
+            $rankingData = [
+                'current_student' => [
+                    'position' => $currentPosition,
+                    'position_text' => $currentPosition . $ordinalSuffix,
+                    'total_score' => round(floatval($currentStudentData['total_weighted_score']), 2),
+                    'percentile' => $percentile,
+                    'percentile_text' => "Top " . (100 - $percentile) . "% ({$percentile}th Percentile)"
+                ],
+                'class_distribution' => [
+                    'total_students' => $totalStudents,
+                    'students_above' => $studentsAbove,
+                    'students_below' => $studentsBelow,
+                    'above_percentage' => $totalStudents > 0 ? round(($studentsAbove / $totalStudents) * 100, 1) : 0,
+                    'current_percentage' => $totalStudents > 0 ? round((1 / $totalStudents) * 100, 1) : 100,
+                    'below_percentage' => $totalStudents > 0 ? round(($studentsBelow / $totalStudents) * 100, 1) : 0
+                ],
+                'all_rankings' => array_map(function ($ranking) {
+                    return [
+                        'student_id' => intval($ranking['student_id']),
+                        'student_name' => $ranking['student_name'],
+                        'matric_no' => $ranking['matric_no'],
+                        'total_score' => round(floatval($ranking['total_weighted_score']), 2),
+                        'position' => intval($ranking['rank_position']),
+                        'is_current_student' => intval($ranking['is_current_student']) === 1
+                    ];
+                }, $rankings)
+            ];
+
+            // Return the ranking data
+            $response->getBody()->write(json_encode([
+                'data' => $rankingData,
+                'status' => 'success',
+                'message' => 'Ranking data retrieved successfully'
+            ]));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        } catch (PDOException $e) {
+            error_log("Database error fetching ranking for student {$studentId}, course {$courseId}: " . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'message' => 'Internal Server Error',
+                'error' => $e->getMessage(),
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        } catch (Exception $e) {
+            error_log("General error fetching ranking: " . $e->getMessage());
+            $response->getBody()->write(json_encode([
+                'message' => 'Internal Server Error',
+                'status' => 'error'
+            ]));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
+    });
+
+
+
     // 3. For Remark Request Page
-    //post remark request 
+    //a) post remark request 
     $group->post('/{studentId}/courses/{courseId}/remark-requests', function (Request $request, Response $response, array $args) {
         $studentId = (int)$args['studentId'];
         $courseId = (int)$args['courseId'];
@@ -513,7 +1050,8 @@ return function (RouteCollectorProxy $group) {
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
         }
     });
-    //get remark requests for a student
+
+    //b) get remark requests for a student
     $group->get('/{studentId}/remark-requests', function (Request $request, Response $response, array $args) {
         $studentId = (int)$args['studentId'];
 
@@ -572,8 +1110,8 @@ return function (RouteCollectorProxy $group) {
         }
     });
 
-    //get all course of student with their the related component of each course
-        $group->get('/{studentId}/courses-with-components', function (Request $request, Response $response, array $args) {
+    // c) get all course of student with their the related component of each course
+    $group->get('/{studentId}/courses-with-components', function (Request $request, Response $response, array $args) {
         // Mock Student ID - in production, get this from JWT token or session
         $studentId = (int)$args['studentId'];
 
