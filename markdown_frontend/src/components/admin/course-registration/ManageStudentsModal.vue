@@ -177,16 +177,13 @@ const handleSaveEnrollments = async () => {
       }
     });
 
-    console.log("Students to enroll:", studentsToEnroll);
-    console.log("Students to unenroll:", studentsToUnenroll);
-
     // Perform API calls
-    // if (studentsToEnroll.length > 0) {
-    //   await adminApi.enrollStudents(props.course.id, studentsToEnroll);
-    // }
-    // if (studentsToUnenroll.length > 0) {
-    //   await adminApi.unenrollStudents(props.course.id, studentsToUnenroll);
-    // }
+    if (studentsToEnroll.length > 0) {
+      await adminApi.enrollStudents(props.course.id, studentsToEnroll);
+    }
+    if (studentsToUnenroll.length > 0) {
+      await adminApi.unenrollStudents(props.course.id, studentsToUnenroll);
+    }
 
     emit('enrollments-updated'); // Notify parent of changes
   } catch (error) {

@@ -2,7 +2,7 @@
   <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
     <div class="relative overflow-x-auto">
       <table class="w-full text-sm text-left">
-        <thead class="bg-gradient-to-r from-gray-100 to-gray-200 border-b border-gray-200">
+        <thead class="bg-gradient-to-r from-sky-50 to-sky-100 border-b border-sky-200">
           <tr>
             <th scope="col" class="px-6 py-4 cursor-pointer hover:bg-sky-200/50 transition-colors duration-200"
               @click="$emit('sort', 'name')">

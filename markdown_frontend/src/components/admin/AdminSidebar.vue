@@ -8,10 +8,11 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
-  LogOutIcon
+  LogOutIcon,
+  School,
+  BookOpenText
 } from "lucide-vue-next"
 import { RouterLink } from 'vue-router'
-// import lecturers from '../../api/lecturers'
 
 export default {
   name: 'ExpandableSidebar',
@@ -19,11 +20,13 @@ export default {
     LogOutIcon,
     Home,
     Users,
+    School,
     BookOpen,
     BarChart3,
     ChevronLeft,
     ChevronRight,
     User,
+    BookOpenText
   },
   setup() {
     const isExpanded = ref(true)
@@ -46,13 +49,13 @@ export default {
       },
       {
         to: '/admin/course-registration',
-        icon: 'Users',
+        icon: 'School',
         label: 'Course Registration',
       },
       {
-        to: 'admin/user-accounts',
-        icon: 'Users',
-        label: 'User Accounts',
+        to: '/admin/course-management',
+        icon: 'BookOpenText',
+        label: 'Manage Courses',
       }
     ]
 

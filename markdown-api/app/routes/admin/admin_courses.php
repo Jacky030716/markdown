@@ -234,32 +234,34 @@ return function (RouteCollectorProxy $group) {
 
             foreach ($studentIds as $studentId) {
                 // Check if student exists
-                $stmtStudent = $pdo->prepare('SELECT COUNT(*) FROM students WHERE id = :student_id');
+                $stmtStudent = $pdo->prepare('SELECT id FROM students WHERE user_id = :student_id');
                 $stmtStudent->bindParam(':student_id', $studentId, PDO::PARAM_INT);
                 $stmtStudent->execute();
-                if ($stmtStudent->fetchColumn() === 0) {
+                $actualStudentId = $stmtStudent->fetchColumn();
+                
+                if (!$actualStudentId) {
                     $failedCount++;
                     $failedStudents[] = "Student ID {$studentId} not found.";
-                    continue;
+                    continue; // Skip to next student
                 }
 
                 // Check for existing enrollment (unique_enrollment constraint handles this too, but for clearer error)
                 $stmtCheckEnrollment = $pdo->prepare('SELECT COUNT(*) FROM enrollments WHERE student_id = :student_id AND course_id = :course_id');
-                $stmtCheckEnrollment->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+                $stmtCheckEnrollment->bindParam(':student_id', $actualStudentId, PDO::PARAM_INT);
                 $stmtCheckEnrollment->bindParam(':course_id', $courseId, PDO::PARAM_INT);
                 $stmtCheckEnrollment->execute();
 
                 if ($stmtCheckEnrollment->fetchColumn() > 0) {
                     // Update existing enrollment if status is not 'enrolled'
                     $stmtUpdateEnrollment = $pdo->prepare('UPDATE enrollments SET status = "enrolled", updated_at = NOW() WHERE student_id = :student_id AND course_id = :course_id');
-                    $stmtUpdateEnrollment->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+                    $stmtUpdateEnrollment->bindParam(':student_id', $actualStudentId, PDO::PARAM_INT);
                     $stmtUpdateEnrollment->bindParam(':course_id', $courseId, PDO::PARAM_INT);
                     $stmtUpdateEnrollment->execute();
                     $successCount++;
                 } else {
                     // Insert new enrollment
                     $stmtEnroll = $pdo->prepare('INSERT INTO enrollments (student_id, course_id, status) VALUES (:student_id, :course_id, "enrolled")');
-                    $stmtEnroll->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+                    $stmtEnroll->bindParam(':student_id', $actualStudentId, PDO::PARAM_INT);
                     $stmtEnroll->bindParam(':course_id', $courseId, PDO::PARAM_INT);
                     $stmtEnroll->execute();
                     $successCount++;
@@ -332,13 +334,24 @@ return function (RouteCollectorProxy $group) {
             $failedStudents = [];
 
             foreach ($studentIds as $studentId) {
+                $stmtStudent = $pdo->prepare('SELECT id FROM students WHERE user_id = :student_id');
+                $stmtStudent->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+                $stmtStudent->execute();
+                $actualStudentId = $stmtStudent->fetchColumn();
+
+                if (!$actualStudentId) {
+                    $failedCount++;
+                    $failedStudents[] = "Student ID {$studentId} not found.";
+                    continue; // Skip to next student
+                }
+
                 // Update enrollment status to 'dropped' for existing enrollments
                 $stmtUnenroll = $pdo->prepare('
                     UPDATE enrollments
                     SET status = "dropped", updated_at = NOW()
                     WHERE student_id = :student_id AND course_id = :course_id AND status = "enrolled"
                 ');
-                $stmtUnenroll->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+                $stmtUnenroll->bindParam(':student_id', $actualStudentId, PDO::PARAM_INT);
                 $stmtUnenroll->bindParam(':course_id', $courseId, PDO::PARAM_INT);
                 $stmtUnenroll->execute();
 

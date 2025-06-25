@@ -13,6 +13,11 @@ export default [
         name: "CourseRegistration",
         component: () => import("../views/admin/CourseRegistration.vue"),
       },
+      {
+        path: "course-management",
+        name: "AdminCourseManagement",
+        component: () => import("../views/admin/AdminCourseManagement.vue"),
+      },
     ],
   },
 ];

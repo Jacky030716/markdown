@@ -12,7 +12,7 @@
       <div class="relative">
         <!-- Select Button -->
         <ListboxButton :id="id" :class="[
-          'relative w-full cursor-pointer rounded-lg border py-3 pl-4 pr-10 text-left shadow-sm transition-all duration-200 ease-in-out',
+          'relative min-w-[200px] w-full cursor-pointer rounded-lg border py-3 pl-4 pr-10 text-left shadow-sm transition-all duration-200 ease-in-out',
           disabled
             ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
             : 'bg-white border-gray-300 text-gray-900 hover:border-gray-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500 focus:ring-opacity-20',
@@ -37,7 +37,7 @@
 
           <!-- Chevron Icon -->
           <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-            <ChevronUpDownIcon :class="[
+            <ChevronDownIcon :class="[
               'text-gray-400 transition-transform duration-200',
               size === 'sm' ? 'h-4 w-4' : size === 'lg' ? 'h-6 w-6' : 'h-5 w-5'
             ]" aria-hidden="true" />
@@ -134,6 +134,7 @@ import {
 } from '@headlessui/vue'
 import {
   CheckIcon,
+  ChevronDownIcon,
 } from 'lucide-vue-next'
 
 export default {
@@ -144,6 +145,7 @@ export default {
     ListboxOptions,
     ListboxOption,
     CheckIcon,
+    ChevronDownIcon
   },
   props: {
     // Core functionality

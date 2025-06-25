@@ -12,12 +12,6 @@ export default {
    * Fetches all users from the system with their associated role-specific data.
    * @returns {Promise<Array>} An array of user objects. Each user object should combine
    * data from `users` table and their respective role table (students, lecturers, advisors).
-   * Example data structure:
-   * [
-   * { id: 1, email: 'lecturer1@utm.my', role: 'lecturer', is_active: 1, name: 'Dr. Norizam', lecturer_id: 'L001', department: 'Computer Science', ... },
-   * { id: 3, email: 'student1@utm.my', role: 'student', is_active: 1, name: 'Loh Chee Huan', matric_no: 'A20001', program: 'Computer Science', ... },
-   * { id: 6, email: 'advisor1@utm.my', role: 'advisor', is_active: 1, name: 'Dr. Teong Lee', advisor_id: 'A001', department: 'Computer Science', ... }
-   * ]
    */
   async getAllUsers() {
     try {
@@ -195,6 +189,70 @@ export default {
     } catch (error) {
       console.error(
         `Error unenroll students from course ${courseId}:`,
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  /**
+   * Adds a new course to the system.
+   * @param {Object} courseData - Course data for creation.
+   * @returns {Promise<Object>} The newly created course object.
+   */
+  async addNewCourse(courseData) {
+    try {
+      const response = await api.post(`/admin/courses/create`, courseData);
+      return response.data.data; // Assuming your API returns the created course data in 'data'
+    } catch (error) {
+      console.error(
+        "Error adding new course:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  /**
+   * Updates an existing course's details.
+   * @param {number} courseId - The ID of the course.
+   * @param {Object} courseData - Course data to update.
+   * @returns {Promise<Object>} The updated course object.
+   */
+  async updateCourse(courseId, courseData) {
+    try {
+      const response = await api.patch(
+        `/admin/courses/${courseId}`,
+        courseData
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error(
+        `Error updating course ${courseId}:`,
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  /**
+   * Toggles the active status of a course.
+   * @param {number} courseId - The ID of the course.
+   * @param {boolean} isActive - The new active status.
+   * @returns {Promise<Object>} Confirmation message.
+   */
+  async toggleCourseActiveStatus(courseId, isActive) {
+    try {
+      const response = await api.patch(
+        `/admin/courses/${courseId}/toggle-active`,
+        {
+          is_active: isActive ? 1 : 0,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error toggling course status ${courseId}:`,
         error.response?.data || error.message
       );
       throw error;

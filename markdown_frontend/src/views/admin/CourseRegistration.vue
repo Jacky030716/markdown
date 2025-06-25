@@ -7,21 +7,21 @@
       class="bg-white shadow-md rounded-lg p-6 mb-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
       <div class="w-full sm:w-auto flex-grow relative">
         <input type="text" v-model="searchQuery" placeholder="Search courses by code or name..."
-          class="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500">
+          class="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search class="w-5 h-5 text-gray-400" />
         </div>
       </div>
-      <div class="w-full sm:w-auto flex-grow sm:flex-grow-0">
-        <label for="lecturerFilter" class="sr-only">Filter by Lecturer</label>
-        <select id="lecturerFilter" v-model="filterLecturerId"
-          class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500">
-          <option :value="null">All Lecturers</option>
-          <option v-for="lecturer in allLecturers" :key="lecturer.id" :value="lecturer.id">
-            {{ lecturer.name }}
-          </option>
-          <option value="unassigned">Unassigned</option>
-        </select>
+      <div class="flex gap-2 w-full sm:w-auto flex-grow sm:flex-grow-0">
+        <EnhancedSelect :options="allLecturers.map(lecturer => ({ value: lecturer.id, label: lecturer.name }))"
+          v-model="filterLecturerId" placeholder="Filter by Lecturer" />
+
+        <!-- Clear filters -->
+        <button @click="clearFilters" v-if="filterLecturerId || searchQuery"
+          class="inline-flex items-center gap-1 border border-rose-100 px-4 py-1.5 rounded-lg text-sm font-medium text-rose-700 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 cursor-pointer hover:scale-105">
+          <XIcon />
+          Clear Filters
+        </button>
       </div>
     </div>
 
@@ -51,9 +51,10 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { Search } from 'lucide-vue-next';
+import { Search, XIcon } from 'lucide-vue-next';
 import adminApi from '../../api/admin'; // Your admin API service
 import { toast } from 'vue-sonner';
+import EnhancedSelect from '../../components/common/EnhancedSelect.vue'
 import ManageStudentsModal from '../../components/admin/course-registration/ManageStudentsModal.vue';
 import AssignLecturerModal from '../../components/admin/course-registration/AssignLecturerModal.vue'
 import CourseTableForAssignment from '../../components/admin/course-registration/CourseTableForAssignment.vue'
@@ -142,6 +143,12 @@ const filteredCourses = computed(() => {
 
   return courses;
 });
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  filterLecturerId.value = null; // Reset to show all lecturers
+  currentPage.value = 1; // Reset to first page
+};
 
 const filteredSortedCourses = computed(() => {
   const courses = [...filteredCourses.value];
