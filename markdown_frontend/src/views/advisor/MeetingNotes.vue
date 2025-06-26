@@ -1,18 +1,27 @@
 <template>
   <div class="meeting-notes-page">
-    <h2>Academic Advisor Meeting Notes</h2>
-    <p>Here you can manage your meeting records with advisees and generate consultation reports. 📝</p>
+    <div class="meeting-notes-header">
+      <div class="header-content">
+        <div class="header-text">
+          <h2 class="page-title">Meeting Notes</h2>
+          <p class="page-subtitle">Manage your meeting records and generate consultation reports</p>
+        </div>
+        <div class="header-actions">
+          <button @click="showAddNoteModal = true" class="add-note-btn btn-primary">
+            <span class="btn-icon">+</span>
+            <span class="btn-text">Add Meeting Note</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
-    <section class="add-meeting-note-section">
-      <h3>Add New Meeting Note</h3>
-      <button @click="showAddNoteModal = true" class="add-button">Add Meeting Note</button>
-      <MeetingNoteFormComponent v-if="showAddNoteModal" :advisorId="currentAdvisorId" :advisees="advisees" :mode="'add'"
-        @close="showAddNoteModal = false" @note-added="handleNoteAdded" />
-    </section>
+    <!-- Keep the modal component -->
+    <MeetingNoteFormComponent v-if="showAddNoteModal" :advisorId="currentAdvisorId" :advisees="advisees" :mode="'add'"
+      @close="showAddNoteModal = false" @note-added="handleNoteAdded" />
 
-    <hr />
 
-    <section class="existing-notes-section">
+    <div class="existing-notes-section">
+
       <h3>My Meeting Records</h3>
       <p v-if="loading" class="loading-message">Loading meeting notes... ⏳</p>
       <p v-else-if="error" class="error-message">Error loading meeting notes: {{ error }} ❌</p>
@@ -22,7 +31,7 @@
           @generate-report="handleGenerateReport" />
       </div>
       <p v-else class="no-notes-message">No meeting notes found for this advisor. Start by adding one! 🚀</p>
-    </section>
+    </div>
 
     <!-- Report Modal -->
     <div v-if="showReportModal" class="modal-overlay" @click="closeReportModal">
@@ -329,36 +338,131 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-h2 {
-  color: #2c3e50;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-h3 {
-  color: #34495e;
-  margin-top: 30px;
-  margin-bottom: 15px;
-}
-
-.add-meeting-note-section,
-.existing-notes-section {
+/* UPDATE the existing .meeting-notes-page rule */
+.meeting-notes-page {
+  padding: 0;
+  max-width: none;
+  margin: 0;
   background-color: #ffffff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100vh;
 }
 
-.add-button {
-  background-color: #4CAF50;
+/* ADD these NEW styles */
+.meeting-notes-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-bottom: 1px solid #e9ecef;
+  padding: 2rem 0;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.header-text {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.page-subtitle {
+  font-size: 1rem;
+  color: #6c757d;
+  margin: 0;
+  font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.add-note-btn {
+  background: #2c3e50;
   color: white;
-  padding: 10px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(44, 62, 80, 0.1);
+}
+
+.add-note-btn:hover {
+  background: #34495e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(44, 62, 80, 0.15);
+}
+
+.add-note-btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background-color: #4aab4e;
+  /* Changed from #3b82f6 to your color */
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #3d8b41;
+  /* Darker shade for hover effect */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 171, 78, 0.3);
+  /* Updated shadow color */
+}
+
+.btn-primary:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-icon {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.btn-text {
+  white-space: nowrap;
+}
+
+
+.existing-notes-section {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  background-color: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.existing-notes-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e9ecef;
 }
 
 .add-button:hover {
@@ -380,13 +484,6 @@ h3 {
 .meeting-notes-list {
   display: grid;
   gap: 20px;
-}
-
-hr {
-  border: 0;
-  height: 1px;
-  background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
-  margin: 40px 0;
 }
 
 /* Modal Styles */
@@ -659,5 +756,48 @@ hr {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+  }
+
+  .add-note-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 1rem 1.5rem;
+  }
+
+  .existing-notes-section {
+    padding: 0 1rem;
+    margin: 1.5rem auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .meeting-notes-header {
+    padding: 1.5rem 0;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .btn-text {
+    display: none;
+  }
+
+  .add-note-btn {
+    min-width: 48px;
+    padding: 0.75rem;
+  }
 }
 </style>
