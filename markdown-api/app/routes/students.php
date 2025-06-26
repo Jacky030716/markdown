@@ -1021,7 +1021,7 @@ return function (RouteCollectorProxy $group) {
 
             $stmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
             $stmt->bindParam(':course_id', $courseId, PDO::PARAM_INT);
-            $stmt->bindParam(':component', $componentName, PDO::PARAM_STR);
+            $stmt->bindParam(':component', $componentId, PDO::PARAM_STR);
             $stmt->bindParam(':current_mark', $currentMark, PDO::PARAM_STR);
             $stmt->bindParam(':justification', $justification, PDO::PARAM_STR);
             $stmt->execute();

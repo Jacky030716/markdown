@@ -31,7 +31,7 @@
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700">Component:</p>
-            <p class="text-base text-teal-700">{{ request.component }}</p>
+            <p class="text-base text-teal-700">{{ request.component_name }}</p>
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700">Current Mark:</p>

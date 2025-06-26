@@ -695,6 +695,7 @@ return function (RouteCollectorProxy $group) {
                     s.matric_no,
                     c.course_code,
                     c.course_name,
+                    mc.name AS component_name,
                     rr.component,
                     rr.current_mark,
                     rr.justification,
@@ -708,6 +709,8 @@ return function (RouteCollectorProxy $group) {
                     students AS s ON rr.student_id = s.id
                 JOIN
                     courses AS c ON rr.course_id = c.id
+                JOIN
+                    mark_components AS mc ON rr.component = mc.id
                 WHERE
                     c.lecturer_id = :lecturer_id
                 ORDER BY
