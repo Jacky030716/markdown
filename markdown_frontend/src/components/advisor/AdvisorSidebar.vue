@@ -50,12 +50,6 @@ export default {
         description: 'Overview of all advisees and at-risk students'
       },
       {
-        to: '/advisor/at-risk',
-        icon: 'AlertTriangle',
-        label: 'At-Risk Students',
-        description: 'Students with GPA < 2.0 or performance issues'
-      },
-      {
         to: '/advisor/meetings',
         icon: 'MessageSquare',
         label: 'Meeting Notes',
