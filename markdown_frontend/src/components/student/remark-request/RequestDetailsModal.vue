@@ -158,10 +158,10 @@
   }
   
   .comment-box {
-    background: #f7fafc;
-    padding: 15px;
+    background: #e8ebec;
+    margin-left: 10px;
+    padding: 10px;
     border-radius: 8px;
-    border-left: 5px solid #4facfe;
     font-style: italic;
     font-size: 0.95rem;
     color: #4a5568;

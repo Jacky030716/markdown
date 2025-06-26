@@ -20,16 +20,35 @@
       @close="showAddNoteModal = false" @note-added="handleNoteAdded" />
 
     <div class="existing-notes-section">
-
-      <h3>My Meeting Records</h3>
-      <p v-if="loading" class="loading-message">Loading meeting notes... ⏳</p>
-      <p v-else-if="error" class="error-message">Error loading meeting notes: {{ error }} ❌</p>
-      <div v-else-if="meetingNotes.length > 0" class="meeting-notes-list">
-        <MeetingNoteComponent v-for="note in meetingNotes" :key="note.id" :meetingNote="note"
-          :advisorId="currentAdvisorId" @note-updated="handleNoteUpdated" @note-deleted="handleNoteDeleted"
-          @generate-report="handleGenerateReport" />
+      <h3 class="section-title">My Meeting Records</h3>
+      <p v-if="loading" class="loading-message">
+        <span class="loading-icon">⏳</span>
+        Loading meeting notes...
+      </p>
+      <p v-else-if="error" class="error-message">
+        <span class="error-icon">❌</span>
+        Error loading meeting notes: {{ error }}
+      </p>
+      <div v-else-if="meetingNotes.length > 0" class="meeting-notes-grid">
+        <MeetingNoteComponent 
+          v-for="note in meetingNotes" 
+          :key="note.id" 
+          :meetingNote="note"
+          :advisorId="currentAdvisorId" 
+          @note-updated="handleNoteUpdated" 
+          @note-deleted="handleNoteDeleted"
+          @generate-report="handleGenerateReport" 
+        />
       </div>
-      <p v-else class="no-notes-message">No meeting notes found for this advisor. Start by adding one! 🚀</p>
+      <div v-else class="no-notes-container">
+        <div class="no-notes-icon">📝</div>
+        <h4 class="no-notes-title">No Meeting Notes Yet</h4>
+        <p class="no-notes-message">Start by adding your first meeting note to keep track of student consultations.</p>
+        <button @click="showAddNoteModal = true" class="add-first-note-btn">
+          <span class="btn-icon">+</span>
+          Add Your First Note
+        </button>
+      </div>
     </div>
 
     <!-- Report Modal -->
@@ -327,42 +346,25 @@ export default {
 </script>
 
 <style scoped>
+/* Main page styles */
 .meeting-notes-page {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* UPDATE the existing .meeting-notes-page rule */
-.meeting-notes-page {
-  padding: 0;
-  max-width: none;
-  margin: 0;
-  background-color: #ffffff;
-  border-radius: 0;
-  box-shadow: none;
   min-height: 100vh;
+  background: #f8fafc;
 }
 
-/* ADD these NEW styles */
 .meeting-notes-header {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-bottom: 1px solid #e9ecef;
-  padding: 2rem 0;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 24px 0;
 }
 
 .header-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2rem;
 }
 
 .header-text {
@@ -370,285 +372,381 @@ export default {
 }
 
 .page-title {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.025em;
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a202c;
 }
 
 .page-subtitle {
-  font-size: 1rem;
-  color: #6c757d;
   margin: 0;
-  font-weight: 400;
+  color: #64748b;
+  font-size: 16px;
 }
 
 .header-actions {
   display: flex;
-  align-items: center;
+  gap: 12px;
 }
 
 .add-note-btn {
-  background: #2c3e50;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 2px 4px rgba(44, 62, 80, 0.1);
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .add-note-btn:hover {
-  background: #34495e;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(44, 62, 80, 0.15);
-}
-
-.add-note-btn:active {
-  transform: translateY(0);
-}
-
-.btn-primary {
-  background-color: #4aab4e;
-  /* Changed from #3b82f6 to your color */
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #3d8b41;
-  /* Darker shade for hover effect */
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(74, 171, 78, 0.3);
-  /* Updated shadow color */
-}
-
-.btn-primary:disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
 }
 
 .btn-icon {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: bold;
 }
 
-.btn-text {
-  white-space: nowrap;
-}
-
-
+/* Existing notes section */
 .existing-notes-section {
   max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 2rem;
-  background-color: transparent;
-  box-shadow: none;
-  border-radius: 0;
+  margin: 0 auto;
+  padding: 32px 24px;
 }
 
-.existing-notes-section h3 {
-  font-size: 1.5rem;
+.section-title {
+  margin: 0 0 24px 0;
+  font-size: 24px;
   font-weight: 600;
-  color: #2c3e50;
-  margin: 0 0 1.5rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e9ecef;
+  color: #1e293b;
 }
 
-.add-button:hover {
-  background-color: #45a049;
+/* Grid layout for meeting notes */
+.meeting-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
 }
 
-.loading-message,
-.error-message,
-.no-notes-message {
-  text-align: center;
-  padding: 20px;
-  color: #555;
+/* Loading and error states */
+.loading-message, .error-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  font-size: 16px;
+  color: #64748b;
+  margin: 24px 0;
+}
+
+.loading-icon, .error-icon {
+  font-size: 20px;
 }
 
 .error-message {
-  color: #e74c3c;
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
 }
 
-.meeting-notes-list {
-  display: grid;
-  gap: 20px;
+/* No notes state */
+.no-notes-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  margin: 24px 0;
 }
 
-/* Modal Styles */
+.no-notes-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.no-notes-title {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.no-notes-message {
+  margin: 0 0 24px 0;
+  color: #64748b;
+  font-size: 16px;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.add-first-note-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-first-note-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+/* Report Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  /* 改为更暗的背景 */
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
+  padding: 24px;
 }
 
 .report-modal {
   background: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 1000px;
-  max-height: 80vh;
+  border-radius: 16px;
+  max-width: 90vw;
+  max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  position: relative;
+  box-shadow: 0 20px 64px rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 30px;
-  border-bottom: 1px solid #eee;
-  background: #f8f9fa;
-  border-radius: 12px 12px 0 0;
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .modal-header h3 {
   margin: 0;
-  color: #2c3e50;
-  font-size: 1.5rem;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.download-btn-header {
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.download-btn-header:hover {
+  background: #2563eb;
 }
 
 .close-btn {
-  background: none;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  color: #64748b;
   border: none;
-  font-size: 24px;
+  border-radius: 8px;
+  font-size: 20px;
   cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 15%;
-  transition: color 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  color: #000;
-  background-color: rgba(0, 0, 0, 0.2);
+  background: #e2e8f0;
+  color: #374151;
 }
 
 .loading-content {
-  padding: 40px;
+  padding: 48px;
   text-align: center;
-  color: #666;
+  color: #64748b;
+  font-size: 16px;
 }
 
 .report-content {
-  padding: 30px;
+  padding: 24px;
+}
+
+/* UTM Report Styles */
+.utm-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.utm-logo {
+  height: 80px;
+  width: auto;
+}
+
+.utm-info {
+  flex: 1;
+}
+
+.utm-title {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.utm-subtitle {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.utm-address {
+  margin: 0 0 2px 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.utm-report-type {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .student-header {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  margin-bottom: 30px;
+  gap: 32px;
+  margin-bottom: 32px;
   padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: #f8fafc;
+  border-radius: 12px;
 }
 
-.student-info-section h4 {
-  margin: 0 0 10px 0;
-  color: #2c3e50;
-  font-size: 1.3rem;
+.student-info-left p, .student-info-right p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #374151;
 }
 
-.student-info-section p,
-.meeting-summary p {
-  margin: 5px 0;
-  color: #555;
+.info-label {
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .meetings-table-container {
   overflow-x: auto;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .meetings-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .meetings-table th {
-  background: #34495e;
-  color: white;
-  padding: 12px 8px;
+  background: #f1f5f9;
+  padding: 12px;
   text-align: left;
   font-weight: 600;
-  white-space: nowrap;
+  color: #374151;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .meetings-table td {
-  padding: 12px 8px;
-  border-bottom: 1px solid #eee;
-  color: #555;
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  color: #374151;
 }
 
-.meetings-table tbody tr:hover {
-  background: #f8f9fa;
+.meetings-table tr:last-child td {
+  border-bottom: none;
 }
 
 .report-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 0;
-  border-top: 1px solid #eee;
-}
-
-.download-btn {
-  background: #27ae60;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s ease;
-}
-
-.download-btn:hover {
-  background: #219a52;
+  text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 12px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .report-modal {
-    width: 95%;
-    max-height: 85vh;
+  .header-content {
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 0 16px;
   }
 
-  .modal-header {
-    padding: 15px 20px;
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 
-  .report-content {
-    padding: 20px;
+  .existing-notes-section {
+    padding: 24px 16px;
+  }
+
+  .meeting-notes-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .section-title {
+    font-size: 20px;
+  }
+
+  .utm-header {
+    flex-direction: column;
+    text-align: center;
   }
 
   .student-header {
@@ -656,147 +754,47 @@ export default {
     gap: 20px;
   }
 
-  .meetings-table th,
-  .meetings-table td {
-    padding: 8px 4px;
-    font-size: 14px;
+  .modal-overlay {
+    padding: 16px;
   }
 
-  .report-footer {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
-  }
-}
-
-/* UTM Header Styles */
-.utm-header {
-  text-align: center;
-  margin-bottom: 30px;
-  padding: 20px 0;
-  border-bottom: 2px solid #2c3e50;
-}
-
-.utm-logo-section {
-  margin-bottom: 15px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.utm-logo {
-  width: 200px;
-  height: 100px;
-  object-fit: contain;
-  display: block;
-  margin: 0 auto;
-}
-
-.utm-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #2c3e50;
-  margin: 10px 0 5px 0;
-}
-
-.utm-subtitle,
-.utm-address {
-  color: #666;
-  margin: 2px 0;
-  font-size: 0.9rem;
-}
-
-.utm-report-type {
-  font-weight: 600;
-  color: #2c3e50;
-  margin-top: 10px;
-  font-size: 0.95rem;
-}
-
-.info-label {
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-/* Update existing student-header styles */
-.student-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 30px;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.header-buttons {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.download-btn-header {
-  background: #00a63e;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s ease;
-}
-
-.download-btn-header:hover {
-  background: #219a52;
-}
-
-.student-info-left,
-.student-info-right {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-@media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    text-align: center;
-    gap: 1.5rem;
-    padding: 0 1rem;
+  .modal-header {
+    padding: 16px;
   }
 
-  .page-title {
-    font-size: 1.75rem;
+  .modal-header h3 {
+    font-size: 20px;
   }
 
-  .add-note-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 1rem 1.5rem;
-  }
-
-  .existing-notes-section {
-    padding: 0 1rem;
-    margin: 1.5rem auto;
+  .report-content {
+    padding: 16px;
   }
 }
 
 @media (max-width: 480px) {
-  .meeting-notes-header {
-    padding: 1.5rem 0;
+  .existing-notes-section {
+    padding: 16px 12px;
   }
 
-  .page-title {
-    font-size: 1.5rem;
+  .meeting-notes-grid {
+    grid-template-columns: 1fr;
   }
 
-  .btn-text {
-    display: none;
+  .add-note-btn, .add-first-note-btn {
+    padding: 10px 20px;
+    font-size: 14px;
   }
 
-  .add-note-btn {
-    min-width: 48px;
-    padding: 0.75rem;
+  .no-notes-container {
+    padding: 32px 20px;
+  }
+
+  .meetings-table {
+    font-size: 12px;
+  }
+
+  .meetings-table th, .meetings-table td {
+    padding: 8px;
   }
 }
 </style>
