@@ -19,7 +19,6 @@
     <MeetingNoteFormComponent v-if="showAddNoteModal" :advisorId="currentAdvisorId" :advisees="advisees" :mode="'add'"
       @close="showAddNoteModal = false" @note-added="handleNoteAdded" />
 
-
     <div class="existing-notes-section">
 
       <h3>My Meeting Records</h3>
@@ -396,7 +395,7 @@ export default {
   border: none;
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
